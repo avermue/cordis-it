@@ -545,9 +545,7 @@ function init(){
   const el=document.getElementById('update-date');
   if(el){
     if(window._generatedAt){
-      const d=new Date(window._generatedAt);
-      const dateStr=d.toLocaleDateString('en-GB',{year:'numeric',month:'short',day:'numeric'});
-      el.textContent=`CORDIS data · ${dateStr}`;
+      el.textContent=`CORDIS data · ${window._generatedAt}`;
     } else {
       el.textContent='CORDIS data';
     }

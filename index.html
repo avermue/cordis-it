@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INRAE Transfert · EU Projects Observatory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Fira+Code:wght@400;500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --it:         #1a4f8a;
+  --it-mid:     #2563ab;
+  --it-light:   #4a90d9;
+  --it-pale:    #e8f0fb;
+  --ink:        #1a1d24;
+  --ink-mid:    #3a4050;
+  --ink-light:  #6b7280;
+  --ink-xlight: #9ca3af;
+  --paper:      #f8f9fc;
+  --white:      #ffffff;
+  --rule:       #e2e8f0;
+  --gold:       #92600a;
+  --gold-pale:  #fdf3e3;
+  --red:        #991b1b;
+  --red-pale:   #fee2e2;
+  --purple:     #6d28d9;
+  --purple-pale:#ede9fe;
+  --green:      #166534;
+  --green-pale: #dcfce7;
+  --r: 6px;
+  --shadow:    0 1px 6px rgba(0,0,0,.07);
+  --shadow-lg: 0 6px 24px rgba(0,0,0,.12);
+  --sidebar-w: 240px;
+  --header-h:  96px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Lato',sans-serif;font-size:14px;background:var(--paper);color:var(--ink);line-height:1.5}
+a{color:var(--it-mid);text-decoration:none}
+button{font-family:'Lato',sans-serif;cursor:pointer}
+
+/* ── HEADER ── */
+.hdr{background:var(--it);color:#fff;position:sticky;top:0;z-index:200;box-shadow:0 2px 14px rgba(0,0,0,.25)}
+.hdr-top{display:flex;align-items:center;gap:14px;padding:0 18px;min-height:50px}
+.hdr-logo{font-family:'Spectral',serif;font-size:1.05rem;font-weight:600;white-space:nowrap;flex-shrink:0}
+.hdr-logo em{font-style:italic;opacity:.6;font-weight:400;font-size:.95rem}
+.hdr-search{flex:1;max-width:360px;display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:5px 13px}
+.hdr-search input{background:none;border:none;outline:none;color:#fff;font-size:.83rem;width:100%;font-family:'Lato',sans-serif}
+.hdr-search input::placeholder{color:rgba(255,255,255,.42)}
+.hdr-kpis{margin-left:auto;display:flex;gap:16px}
+.kpi{text-align:right}
+.kpi-val{font-family:'Spectral',serif;font-size:1.3rem;line-height:1;display:block}
+.kpi-lbl{font-size:.6rem;opacity:.6;text-transform:uppercase;letter-spacing:.07em}
+.tab-bar{display:flex;gap:1px;padding:0 18px;background:var(--it);border-top:1px solid rgba(255,255,255,.1)}
+.tab-btn{padding:7px 15px;border:none;background:transparent;color:rgba(255,255,255,.6);font-size:.78rem;font-weight:700;border-bottom:3px solid transparent;transition:all .15s;white-space:nowrap;letter-spacing:.02em}
+.tab-btn:hover{color:#fff}
+.tab-btn.on{color:#fff;border-bottom-color:#fff}
+
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-columns:var(--sidebar-w) 1fr;min-height:calc(100vh - var(--header-h))}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--white);border-right:1px solid var(--rule);position:sticky;top:var(--header-h);height:calc(100vh - var(--header-h));overflow-y:auto;padding:12px 11px}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
+.fb{margin-bottom:12px}
+.ft{font-family:'Fira Code',monospace;font-size:.59rem;font-weight:500;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-light);margin-bottom:5px;display:block}
+.fr{border:none;border-top:1px solid var(--rule);margin:11px 0}
+.fsel{width:100%;padding:6px 24px 6px 8px;border:1.5px solid var(--rule);border-radius:var(--r);font-family:'Lato',sans-serif;font-size:.8rem;color:var(--ink);background:var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E") no-repeat right 8px center;outline:none;appearance:none}
+.fsel:focus{border-color:var(--it-mid)}
+.cl{display:flex;flex-direction:column;gap:2px}
+.ci{display:flex;align-items:center;gap:6px;padding:4px 5px;border-radius:4px;font-size:.79rem;transition:background .1s}
+.ci:hover{background:var(--it-pale)}
+.ci input[type=checkbox]{accent-color:var(--it);width:12px;height:12px;flex-shrink:0;cursor:pointer}
+.cc{margin-left:auto;font-family:'Fira Code',monospace;font-size:.59rem;color:var(--ink-xlight);background:var(--paper);border:1px solid var(--rule);border-radius:7px;padding:0 5px}
+.btn-reset{width:100%;padding:6px;background:none;border:1.5px solid var(--rule);border-radius:var(--r);font-family:'Fira Code',monospace;font-size:.61rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-light);transition:all .15s}
+.btn-reset:hover{border-color:var(--it);color:var(--it)}
+
+/* ── MAIN ── */
+.main{padding:14px 16px;min-width:0}
+.tab-panel{display:none}
+.tab-panel.on{display:block}
+.rbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.rcount{font-family:'Fira Code',monospace;font-size:.71rem;color:var(--ink-light)}
+.rcount strong{color:var(--it)}
+.filter-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 8px 3px 9px;border-radius:12px;background:var(--it-pale);border:1px solid rgba(37,99,171,.25);font-size:.7rem;color:var(--it);font-family:'Lato',sans-serif;white-space:nowrap}
+.filter-pill .pill-x{cursor:pointer;font-size:.75rem;opacity:.6;transition:opacity .1s;line-height:1;margin-left:1px}
+.filter-pill .pill-x:hover{opacity:1}
+.filter-pill.pill-domain{background:#e8f5ec;border-color:rgba(22,101,52,.2);color:#166534}
+.filter-pill.pill-region{background:#fdf3e3;border-color:rgba(146,96,10,.2);color:#92600a}
+.vbtns{display:flex;gap:3px}
+.vbtn{padding:4px 9px;border:1.5px solid var(--rule);background:var(--white);border-radius:var(--r);font-size:.75rem;color:var(--ink-light);transition:all .15s}
+.vbtn.on{background:var(--it);border-color:var(--it);color:#fff}
+
+/* ── TAGS ── */
+.tag{font-family:'Fira Code',monospace;font-size:.59rem;padding:2px 6px;border-radius:10px;border:1px solid;white-space:nowrap;line-height:1.7}
+.tg-he        {color:#1e5631;border-color:#a8d8b9;background:#e8f5ec}
+.tg-h2020     {color:var(--it);border-color:#93c5fd;background:var(--it-pale)}
+.tg-SIGNED    {color:var(--green);border-color:#86efac;background:var(--green-pale)}
+.tg-CLOSED    {color:#78350f;border-color:#fcd34d;background:#fef9c3}
+.tg-TERMINATED{color:var(--red);border-color:#fca5a5;background:var(--red-pale)}
+.tg-coordinator     {color:var(--gold);border-color:#fcd34d;background:var(--gold-pale)}
+.tg-participant     {color:var(--it);border-color:#93c5fd;background:var(--it-pale)}
+.tg-associatedPartner{color:var(--purple);border-color:#c4b5fd;background:var(--purple-pale)}
+.tg-thirdParty      {color:var(--ink-light);border-color:var(--rule);background:var(--paper)}
+.tg-scheme{color:var(--ink-mid);border-color:var(--rule);background:var(--paper)}
+
+/* ── CARDS ── */
+#grid{display:grid;gap:8px;grid-template-columns:1fr}
+#grid.cols2{grid-template-columns:repeat(2,1fr)}
+.card{background:var(--white);border:1px solid var(--rule);border-radius:var(--r);cursor:pointer;overflow:hidden;transition:box-shadow .15s,transform .15s;display:flex;flex-direction:column}
+.card:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+.card-top{padding:10px 12px 8px;border-bottom:1px solid var(--rule);display:flex;gap:9px;align-items:flex-start}
+.card-acro{font-family:'Fira Code',monospace;font-size:.66rem;font-weight:500;background:var(--it);color:#fff;padding:3px 7px;border-radius:3px;white-space:nowrap;flex-shrink:0;margin-top:1px}
+.card-title{font-size:.85rem;font-weight:700;line-height:1.35}
+.card-body{padding:7px 12px;flex:1}
+.card-kw{font-size:.74rem;color:var(--ink-mid);font-style:italic;margin-bottom:6px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-tags{display:flex;flex-wrap:wrap;gap:3px}
+.card-foot{padding:5px 12px;border-top:1px solid var(--rule);background:var(--paper);display:flex;align-items:center;justify-content:space-between;gap:5px;flex-wrap:wrap}
+.card-dates{font-family:'Fira Code',monospace;font-size:.61rem;color:var(--ink-light)}
+.card-budget{font-family:'Fira Code',monospace;font-size:.65rem;color:var(--it);font-weight:500}
+.card-flags{font-size:.8rem;letter-spacing:-.04em}
+.card-link{font-family:'Fira Code',monospace;font-size:.59rem;color:var(--it-mid);border:1px solid var(--rule);padding:2px 6px;border-radius:3px}
+.card-link:hover{background:var(--it-pale)}
+
+/* ── CHART CONTAINERS — taille contrainte ── */
+.section-title{font-family:'Fira Code',monospace;font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-light);margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid var(--rule)}
+.stat-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.stat-card{background:var(--white);border:1px solid var(--rule);border-radius:var(--r);padding:10px 14px;flex:1;min-width:120px}
+.stat-val{font-family:'Spectral',serif;font-size:1.6rem;color:var(--it);line-height:1}
+.stat-lbl{font-size:.65rem;color:var(--ink-light);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
+.stat-sub{font-size:.72rem;color:var(--ink-mid);margin-top:2px}
+
+/* Charts in a 2-col grid, fixed max-height */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.chart-box{background:var(--white);border:1px solid var(--rule);border-radius:var(--r);padding:12px}
+.chart-box.full{grid-column:span 2}
+.chart-box.third{grid-column:span 1}
+.chart-title{font-family:'Fira Code',monospace;font-size:.62rem;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-light);margin-bottom:8px}
+/* Key: constrain canvas height */
+.chart-box canvas{max-height:220px !important}
+.chart-box.tall canvas{max-height:280px !important}
+.chart-box.short canvas{max-height:160px !important}
+
+/* ── DISCIPLINES ── */
+.disc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.disc-grid .full{grid-column:span 2}
+.domain-list{max-height:240px;overflow-y:auto}
+.domain-item{display:flex;align-items:center;justify-content:space-between;padding:5px 7px;border-radius:4px;cursor:pointer;font-size:.79rem;transition:background .1s}
+.domain-item:hover,.domain-item.on{background:var(--it-pale);color:var(--it)}
+.partner-search{display:flex;gap:7px;margin-bottom:8px;flex-wrap:wrap}
+.partner-search input,.partner-search select{padding:5px 8px;border:1.5px solid var(--rule);border-radius:var(--r);font-size:.79rem;outline:none;font-family:'Lato',sans-serif}
+.partner-search input:focus,.partner-search select:focus{border-color:var(--it-mid)}
+.partner-search input{flex:1;min-width:140px}
+.ptable{width:100%;border-collapse:collapse;font-size:.75rem}
+.ptable th{text-align:left;padding:4px 7px;font-family:'Fira Code',monospace;font-size:.59rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-light);border-bottom:2px solid var(--rule);white-space:nowrap}
+.ptable td{padding:4px 7px;border-bottom:1px solid var(--rule);vertical-align:top;color:var(--ink-mid)}
+.ptable tr:last-child td{border-bottom:none}
+.ptable tr:hover td{background:var(--paper)}
+.pager{display:flex;gap:3px;margin-top:7px;align-items:center;font-size:.74rem;flex-wrap:wrap}
+.pager button{padding:3px 7px;border:1px solid var(--rule);background:var(--white);border-radius:3px;font-size:.72rem}
+.pager button:hover{background:var(--it-pale)}
+.pager button.on{background:var(--it);color:#fff;border-color:var(--it)}
+
+/* ── GEO ── */
+.geo-grid{display:grid;gap:12px}
+.region-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.region-card{background:var(--white);border:1px solid var(--rule);border-radius:var(--r);padding:10px}
+.region-name{font-weight:700;font-size:.82rem;margin-bottom:5px}
+.rbar-wrap{background:var(--paper);border-radius:3px;height:5px;margin-bottom:3px}
+.rbar-fill{background:var(--it-light);border-radius:3px;height:5px;transition:width .4s}
+.rstat{font-family:'Fira Code',monospace;font-size:.62rem;color:var(--ink-light)}
+
+/* ── GANTT ── */
+.gantt-controls{display:flex;gap:7px;margin-bottom:9px;align-items:center;flex-wrap:wrap}
+.gantt-controls select{padding:5px 22px 5px 7px;border:1.5px solid var(--rule);border-radius:var(--r);font-size:.78rem;outline:none;background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E") no-repeat right 7px center;appearance:none}
+.gantt-wrap{overflow-x:auto;background:var(--white);border:1px solid var(--rule);border-radius:var(--r);padding:10px;max-height:70vh;overflow-y:auto}
+.gantt-head{display:flex;margin-bottom:5px;border-bottom:1px solid var(--rule);padding-bottom:5px;position:sticky;top:0;background:var(--white);z-index:1}
+.g-label-col{width:180px;flex-shrink:0;font-family:'Fira Code',monospace;font-size:.57rem;color:var(--ink-light);text-transform:uppercase;letter-spacing:.06em}
+.g-months{flex:1;display:flex}
+.g-tick{flex:1;font-family:'Fira Code',monospace;font-size:.56rem;color:var(--ink-xlight);text-align:center;border-left:1px dotted var(--rule)}
+.g-row{display:flex;align-items:center;margin-bottom:2px;min-height:20px}
+.g-row:hover .g-bar{filter:brightness(.9)}
+.g-name{width:180px;flex-shrink:0;font-size:.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:7px;cursor:pointer;color:var(--ink-mid)}
+.g-name:hover{color:var(--it)}
+.g-track{flex:1;position:relative;height:13px}
+.g-bar{position:absolute;height:100%;border-radius:3px;cursor:pointer;transition:filter .15s;background:var(--it)}
+.g-today{position:absolute;top:0;bottom:0;width:1.5px;background:var(--red);opacity:.45;pointer-events:none}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 20px;color:var(--ink-light);grid-column:1/-1}
+.empty .big{font-family:'Spectral',serif;font-size:2.8rem;opacity:.13;display:block;margin-bottom:6px}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(10,20,40,.48);z-index:300;align-items:flex-start;justify-content:center;padding:26px 14px;overflow-y:auto}
+.overlay.open{display:flex}
+.modal{background:var(--white);border-radius:8px;max-width:860px;width:100%;box-shadow:var(--shadow-lg);animation:fadeUp .2s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.mhd{padding:14px 18px 11px;border-bottom:1px solid var(--rule);display:flex;gap:11px;align-items:flex-start}
+.macro{font-family:'Spectral',serif;font-style:italic;font-size:1.4rem;color:var(--it);flex-shrink:0;line-height:1.2}
+.mtw{flex:1}
+.mtitle{font-size:.93rem;font-weight:700;line-height:1.4;margin-bottom:5px}
+.mtags{display:flex;flex-wrap:wrap;gap:3px}
+.mclose{margin-left:auto;background:none;border:none;font-size:1.2rem;color:var(--ink-light);flex-shrink:0;padding:2px;transition:color .1s}
+.mclose:hover{color:var(--ink)}
+.mbody{padding:14px 18px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.msec{grid-column:span 1}
+.msec.full{grid-column:span 2}
+.msec-title{font-family:'Fira Code',monospace;font-size:.59rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-light);margin-bottom:6px;padding-bottom:3px;border-bottom:1px solid var(--rule)}
+dl.kv{font-size:.79rem}
+dl.kv dt{color:var(--ink-light);font-size:.69rem;margin-top:4px}
+dl.kv dd{color:var(--ink)}
+.mptable{width:100%;border-collapse:collapse;font-size:.73rem}
+.mptable th{text-align:left;padding:4px 6px;font-family:'Fira Code',monospace;font-size:.58rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-light);border-bottom:1px solid var(--rule)}
+.mptable td{padding:4px 6px;border-bottom:1px solid var(--rule);vertical-align:top;color:var(--ink-mid)}
+.mptable tr:last-child td{border-bottom:none}
+.mptable tr.is-it td{background:var(--it-pale);color:var(--it);font-weight:700}
+.mptable tr:not(.is-it):hover td{background:var(--paper)}
+.mfoot{padding:10px 18px;border-top:1px solid var(--rule);display:flex;justify-content:flex-end}
+.btn-primary{display:inline-block;padding:7px 15px;background:var(--it);color:#fff;border-radius:var(--r);font-size:.8rem;font-weight:700;transition:background .15s}
+.btn-primary:hover{background:var(--it-mid)}
+
+@media(max-width:800px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto}
+  .mbody,.chart-grid,.disc-grid{grid-template-columns:1fr}
+  .chart-box.full,.disc-grid .full,.msec.full{grid-column:span 1}
+  #grid.cols2,.region-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-top">
+    <div class="hdr-logo">INRAE Transfert <em>· EU Projects Observatory</em></div>
+    <div class="hdr-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" opacity=".5">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="search" placeholder="Search acronym, title, keywords…" autocomplete="off">
+    </div>
+    <div class="hdr-kpis" id="hdr-kpis"></div>
+  </div>
+  <nav class="tab-bar">
+    <button class="tab-btn on" data-tab="projects">📋 Projects</button>
+    <button class="tab-btn" data-tab="disciplines">🔬 Disciplines &amp; Partners</button>
+    <button class="tab-btn" data-tab="geography">🌍 Geography</button>
+    <button class="tab-btn" data-tab="budget">💶 Budget</button>
+    <button class="tab-btn" data-tab="timeline">📅 Timeline</button>
+  </nav>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="fb" id="sort-block">
+      <span class="ft">Sort</span>
+      <select class="fsel" id="sort">
+        <option value="startDate-desc">Start date ↓</option>
+        <option value="startDate-asc">Start date ↑</option>
+        <option value="budget-desc">EU budget ↓</option>
+        <option value="budget-asc">EU budget ↑</option>
+        <option value="acronym-asc">Acronym A→Z</option>
+        <option value="partners-desc">Partners ↓</option>
+      </select>
+    </div>
+    <button class="btn-reset" id="btn-reset" style="margin-bottom:4px">↺ Reset filters</button>
+    <hr class="fr">
+    <div class="fb">
+      <span class="ft">Programme</span>
+      <div class="cl" id="f-programme"></div>
+    </div>
+    <hr class="fr">
+    <div class="fb">
+      <span class="ft">IT Role</span>
+      <div class="cl" id="f-it-role"></div>
+    </div>
+    <hr class="fr">
+    <div class="fb">
+      <span class="ft">Funding Type</span>
+      <div class="cl" id="f-scheme-group"></div>
+    </div>
+    <hr class="fr">
+    <div class="fb">
+      <span class="ft">Status</span>
+      <div class="cl" id="f-status"></div>
+    </div>
+    <hr class="fr">
+    <div class="fb">
+      <span class="ft">Partner Country</span>
+      <div class="cl" id="f-country"></div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- TAB 1: PROJECTS -->
+    <div class="tab-panel on" id="tab-projects">
+      <div class="rbar">
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <div class="rcount" id="rcount"></div>
+            <div class="vbtns">
+              <button class="vbtn on" id="v-list" onclick="setView('list')">☰ List</button>
+              <button class="vbtn" id="v-grid" onclick="setView('grid')">⊞ Grid</button>
+            </div>
+          </div>
+          <div id="active-filters" style="display:flex;flex-wrap:wrap;gap:5px;min-height:0"></div>
+        </div>
+      </div>
+      <div id="grid"><div class="empty"><span class="big">◌</span>Loading…</div></div>
+    </div>
+
+    <!-- TAB 2: BUDGET -->
+    <div class="tab-panel" id="tab-budget">
+      <div class="stat-row" id="budget-stats"></div>
+      <div class="chart-grid">
+        <div class="chart-box">
+          <div class="chart-title">IT Contribution Distribution (k€)</div>
+          <canvas id="chart-hist"></canvas>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">Projects by Funding Type</div>
+          <canvas id="chart-scheme"></canvas>
+        </div>
+        <div class="chart-box full tall">
+          <div class="chart-title">IT Contribution &amp; Project Count by Start Year</div>
+          <canvas id="chart-time"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: DISCIPLINES & PARTNERS -->
+    <div class="tab-panel" id="tab-disciplines">
+      <div class="disc-grid">
+        <div class="chart-box">
+          <div class="chart-title">Scientific Domains (EuroSciVoc)</div>
+          <canvas id="chart-domains"></canvas>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">Domains — click to filter projects</div>
+          <div class="domain-list" id="domain-list"></div>
+        </div>
+        <div class="chart-box full">
+          <div class="chart-title">Partner Organisations</div>
+          <div class="partner-search">
+            <input type="text" id="partner-q" placeholder="Search organisation…">
+            <select id="partner-type">
+              <option value="">All types</option>
+              <option value="REC">REC — Research Centre</option>
+              <option value="HES">HES — Higher Education</option>
+              <option value="PRC">PRC — Private company</option>
+              <option value="PUB">PUB — Public body</option>
+              <option value="OTH">OTH — Other</option>
+            </select>
+            <select id="partner-country-f"><option value="">All countries</option></select>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="ptable">
+              <thead><tr>
+                <th>Organisation</th><th>Country</th><th>Type</th>
+                <th>PIC</th><th>Projects with IT</th><th>Total EU contrib.</th>
+              </tr></thead>
+              <tbody id="partner-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pager" id="partner-pager"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: GEOGRAPHY -->
+    <div class="tab-panel" id="tab-geography">
+      <div class="geo-grid">
+        <div class="chart-box tall">
+          <div class="chart-title">Top 25 Partner Countries</div>
+          <canvas id="chart-countries"></canvas>
+        </div>
+        <div>
+          <div class="section-title" style="margin-bottom:8px">Partner Regions</div>
+          <div class="region-grid" id="region-grid"></div>
+        </div>
+      
+      </div>
+    </div>
+
+    <!-- TAB 5: TIMELINE -->
+    <div class="tab-panel" id="tab-timeline">
+      <div class="gantt-controls">
+        <select id="gantt-sort">
+          <option value="end-asc">Sort by end date ↑</option>
+          <option value="start-asc">Sort by start date ↑</option>
+          <option value="alpha">Alphabetical</option>
+        </select>
+        <select id="gantt-filter">
+          <option value="SIGNED">Ongoing only</option>
+          <option value="ALL">All projects</option>
+        </select>
+        <span style="font-family:'Fira Code',monospace;font-size:.65rem;color:var(--ink-light)">
+          Red line = today &nbsp;|&nbsp; Click a bar to open project
+        </span>
+      </div>
+      <div class="gantt-wrap" id="gantt-wrap">
+        <div class="empty"><span class="big">◌</span>Loading…</div>
+      </div>
+      <div class="chart-box" style="margin-top:12px">
+        <div class="chart-title">Simultaneous active IT projects per year</div>
+        <canvas id="chart-concurrent"></canvas>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="modal">
+    <div class="mhd">
+      <div class="macro" id="m-acro"></div>
+      <div class="mtw">
+        <div class="mtitle" id="m-title"></div>
+        <div class="mtags" id="m-tags"></div>
+      </div>
+      <button class="mclose" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="msec">
+        <div class="msec-title">General information</div>
+        <dl class="kv" id="m-info"></dl>
+      </div>
+      <div class="msec">
+        <div class="msec-title">IT participation</div>
+        <dl class="kv" id="m-it"></dl>
+      </div>
+      <div class="msec full">
+        <div class="msec-title">Objective</div>
+        <div id="m-obj" style="font-size:.79rem;line-height:1.65;color:var(--ink-mid);max-height:260px;overflow-y:auto;padding-right:4px"></div>
+      </div>
+      <div class="msec full">
+        <div class="msec-title" id="m-pt-title">Partners</div>
+        <div style="overflow-x:auto;max-height:300px;overflow-y:auto">
+          <table class="mptable">
+            <thead><tr><th>Organisation</th><th>Country</th><th>Role</th><th>Type</th><th>EU Contribution</th></tr></thead>
+            <tbody id="m-partners"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot"><a id="m-link" href="#" target="_blank" class="btn-primary">View on CORDIS ↗</a></div>
+  </div>
+</div>
+
+<script>
+const DATA_URL = 'data/inrae_projects.json';
+let ALL=[], IT_PROJECTS=[], FILTERED=[];
+let FILTERS={programme:new Set(),itRole:new Set(),schemeGroup:new Set(),status:new Set(),country:new Set()};
+let SEARCH='',SORT='startDate-desc',DOMAIN_FILTER=null,REGION_FILTER=null,PARTNER_PAGE=0;
+const PER_PAGE=25;
+let CHARTS={};
+
+/* ── SCHEME GROUPS ── */
+const SCHEME_GROUPS={
+  'RIA / IA':        s=>s.includes('RIA')||s.includes('-IA'),
+  'MSCA':            s=>s.includes('MSCA'),
+  'ERC':             s=>s.includes('ERC'),
+  'CSA':             s=>s.includes('CSA'),
+  'EIC':             s=>s.includes('EIC'),
+  'JU / COFUND':     s=>s.includes('JU-')||s.includes('COFUND'),
+  'Other':           ()=>true
+};
+function schemeGroup(scheme){
+  if(!scheme) return 'Other';
+  const s=scheme.toUpperCase();
+  for(const[g,fn] of Object.entries(SCHEME_GROUPS)) if(fn(s)) return g;
+  return 'Other';
+}
+
+/* ── UTILS ── */
+// CORDIS uses some non-ISO-3166-1-alpha-2 codes — map to correct emoji codes
+const CC_NORM={'EL':'GR','UK':'GB'};
+const flag=cc=>{
+  if(!cc||cc.length!==2) return cc||'';
+  const c=CC_NORM[cc]||cc;
+  const o=0x1F1E6-65;
+  return String.fromCodePoint(c.charCodeAt(0)+o)+String.fromCodePoint(c.charCodeAt(1)+o);
+};
+const fmtM=n=>n>=1e6?(n/1e6).toFixed(1)+'M€':n>=1e3?Math.round(n/1e3)+'k€':n>0?n+'€':'–';
+const fmtD=d=>d?d.slice(0,7):'–';
+const fmtY=d=>d?d.slice(0,4):'';
+const ROLE_L={coordinator:'Coordinator',participant:'Participant',associatedPartner:'Assoc. Partner',thirdParty:'Third Party'};
+const roleL=r=>ROLE_L[r]||r||'–';
+const normRole=r=>(r==='partner'?'associatedPartner':r)||'';
+const progTag=p=>{
+  const s=(p.programme||'').toUpperCase();
+  return s.includes('H2020')?'<span class="tag tg-h2020">H2020</span>':'<span class="tag tg-he">HE</span>';
+};
+const normProg=p=>{const s=(p.programme||p.frameworkProgramme||'').toUpperCase();return s.includes('H2020')?'H2020':'HORIZON';};
+
+const REGIONS={
+  'Northern Europe': ['DK','EE','FI','IS','IE','LV','LT','NO','SE','GB','UK'],
+  'Western Europe':  ['AT','BE','FR','DE','LU','NL','CH'],
+  'Southern Europe': ['HR','CY','GR','IT','MT','PT','SI','ES'],
+  'Eastern Europe':  ['BG','CZ','HU','PL','RO','SK','RS','UA','BY','MD','AL','BA','MK','ME','XK'],
+  'North America':              ['US','CA','MX'],
+  'China, Hong Kong & Taiwan':  ['CN','HK','TW','MO'],
+  'Other':                      [] // catch-all
+};
+const getRegion=cc=>{for(const[r,cs] of Object.entries(REGIONS))if(cs.includes(cc))return r;return 'Other';};
+
+/* ── LOAD ── */
+async function load(){
+  try{
+    const r=await fetch(DATA_URL);if(!r.ok)throw new Error(`HTTP ${r.status}`);
+    ALL=await r.json();
+    ALL.forEach(p=>{
+      p.programme=normProg(p);
+      p.itRole=normRole(p.itRole||'');
+      (p.partners||[]).forEach(o=>{o.role=normRole(o.role||'');});
+      p.schemeGroup=schemeGroup(p.fundingScheme||'');
+      if(!p.fundingSchemeShort)p.fundingSchemeShort=(p.fundingScheme||'').replace('HORIZON-TMA-','').replace('HORIZON-','');
+    });
+    IT_PROJECTS=ALL.filter(p=>p.hasIT);
+    init();
+  }catch(e){
+    document.getElementById('grid').innerHTML=`<div class="empty"><span class="big">⚠</span>Cannot load <code>${DATA_URL}</code><br><small>${e.message}</small></div>`;
+  }
+}
+
+/* ── INIT ── */
+function init(){
+  buildKPIs();
+  buildSidebar();
+  apply();
+  bindEvents();
+}
+
+/* ── KPIs in header ── */
+function buildKPIs(){
+  const n=IT_PROJECTS.length;
+  const signed=IT_PROJECTS.filter(p=>p.status==='SIGNED').length;
+  const budget=IT_PROJECTS.reduce((s,p)=>s+(p.itEcContribution||0),0)/1e6;
+  const countries=new Set(IT_PROJECTS.flatMap(p=>p.partnerCountries)).size;
+  document.getElementById('hdr-kpis').innerHTML=`
+    <div class="kpi"><span class="kpi-val">${n}</span><span class="kpi-lbl">IT projects</span></div>
+    <div class="kpi"><span class="kpi-val">${signed}</span><span class="kpi-lbl">Ongoing</span></div>
+    <div class="kpi"><span class="kpi-val">${budget.toFixed(0)}</span><span class="kpi-lbl">IT budget M€</span></div>
+    <div class="kpi"><span class="kpi-val">${countries}</span><span class="kpi-lbl">Countries</span></div>`;
+}
+
+/* ── SIDEBAR ── */
+function buildSidebar(){
+  buildList('f-programme','programme',[...new Set(IT_PROJECTS.map(p=>p.programme))].sort(),p=>p.programme);
+
+  const itRoles=[...new Set(IT_PROJECTS.map(p=>p.itRole).filter(Boolean))].sort();
+  buildList('f-it-role','itRole',itRoles,p=>p.itRole,roleL);
+
+  // Scheme groups (count from IT_PROJECTS)
+  const sgCounts={};
+  IT_PROJECTS.forEach(p=>{sgCounts[p.schemeGroup]=(sgCounts[p.schemeGroup]||0)+1;});
+  const sgEl=document.getElementById('f-scheme-group');
+  sgEl.innerHTML=Object.keys(SCHEME_GROUPS).filter(g=>sgCounts[g]).map(g=>`
+    <label class="ci"><input type="checkbox" data-key="schemeGroup" value="${g}">
+    ${g}<span class="cc">${sgCounts[g]||0}</span></label>`).join('');
+
+  buildList('f-status','status',[...new Set(IT_PROJECTS.map(p=>p.status).filter(Boolean))].sort(),p=>p.status);
+
+  const ctries=[...new Set(IT_PROJECTS.flatMap(p=>p.partnerCountries))].sort();
+  buildList('f-country','country',ctries,p=>p.partnerCountries,cc=>flag(cc)+' '+cc);
+
+  // Partner country dropdown
+  const psel=document.getElementById('partner-country-f');
+  ctries.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=flag(c)+' '+c;psel.appendChild(o);});
+}
+
+function buildList(elId,key,vals,getter,labelFn){
+  const el=document.getElementById(elId);
+  const c={};
+  IT_PROJECTS.forEach(p=>{
+    const v=getter(p);
+    if(v===null||v===undefined||v==='') return;
+    if(Array.isArray(v))v.forEach(x=>{c[x]=(c[x]||0)+1;});
+    else c[v]=(c[v]||0)+1;
+  });
+  el.innerHTML=vals.map(v=>`<label class="ci">
+    <input type="checkbox" data-key="${key}" value="${v}">
+    ${labelFn?labelFn(v):v}<span class="cc">${c[v]||0}</span></label>`).join('');
+}
+
+/* ── FILTER ── */
+function apply(){
+  const q=SEARCH.toLowerCase();
+  FILTERED=IT_PROJECTS.filter(p=>{
+    if(q&&!`${p.acronym} ${p.title} ${p.keywords} ${p.objective}`.toLowerCase().includes(q)) return false;
+    if(FILTERS.programme.size&&!FILTERS.programme.has(p.programme)) return false;
+    if(FILTERS.itRole.size&&!FILTERS.itRole.has(p.itRole)) return false;
+    if(FILTERS.schemeGroup.size&&!FILTERS.schemeGroup.has(p.schemeGroup)) return false;
+    if(FILTERS.status.size&&!FILTERS.status.has(p.status)) return false;
+    if(FILTERS.country.size&&!p.partnerCountries.some(c=>FILTERS.country.has(c))) return false;
+    if(REGION_FILTER){
+      const regionCodes=REGIONS[REGION_FILTER]||[];
+      // 'Other' = countries not in any named region
+      if(REGION_FILTER==='Other'){
+        const allNamed=Object.values(REGIONS).flat();
+        if(!p.partnerCountries.some(c=>!allNamed.includes(c))) return false;
+      } else {
+        if(!p.partnerCountries.some(c=>regionCodes.includes(c)||regionCodes.includes(CC_NORM[c]||c))) return false;
+      }
+    }
+    if(DOMAIN_FILTER){
+      // Use the lookup built in renderDisciplines for correct category matching
+      const ids=window._domToIds&&window._domToIds[DOMAIN_FILTER];
+      if(ids&&ids.size>0){if(!ids.has(p.id+'|'+p.programme)) return false;}
+      else{
+        // Fallback: direct match
+        const cats=projectCats(p);
+        if(!cats.includes(DOMAIN_FILTER)) return false;
+      }
+    }
+    return true;
+  });
+  const[sk,sd]=SORT.split('-');
+  FILTERED.sort((a,b)=>{
+    let va,vb;
+    if(sk==='startDate'){va=a.startDate||'';vb=b.startDate||'';}
+    else if(sk==='budget'){va=a.itEcContribution||0;vb=b.itEcContribution||0;}
+    else if(sk==='acronym'){va=a.acronym||'';vb=b.acronym||'';}
+    else{va=a.partnerCount||0;vb=b.partnerCount||0;}
+    const c=typeof va==='string'?va.localeCompare(vb,'en'):va-vb;
+    return sd==='desc'?-c:c;
+  });
+  renderAll();
+}
+
+function renderAll(){
+  const n=FILTERED.length, tot=IT_PROJECTS.length;
+  document.getElementById('rcount').innerHTML=
+    `<strong>${n}</strong> IT project${n!==1?'s':''} of ${tot}`;
+  renderActiveFilters();
+  renderCards();
+  renderBudget();
+  renderDisciplines();
+  renderGeo();
+  renderTimeline();
+}
+
+// Registry of pill clear-callbacks, rebuilt each render
+const PILL_ACTIONS=[];
+
+function renderActiveFilters(){
+  PILL_ACTIONS.length=0; // reset
+  const pills=[];
+
+  function addPill(label, cls, clearFn){
+    const i=PILL_ACTIONS.length;
+    PILL_ACTIONS.push(clearFn);
+    pills.push(`<span class="filter-pill ${cls}">
+      ${label}
+      <span class="pill-x" onclick="clearPill(${i})">&times;</span>
+    </span>`);
+  }
+
+  // Search
+  if(SEARCH.trim()){
+    addPill(`Search: "${SEARCH.trim()}"`, '', ()=>{
+      SEARCH=''; document.getElementById('search').value=''; apply();
+    });
+  }
+
+  // Programme
+  [...FILTERS.programme].forEach(v=>addPill(
+    `Programme: ${v}`, '',
+    ()=>{FILTERS.programme.delete(v);syncCheckbox('programme',v,false);apply();}
+  ));
+
+  // IT Role
+  const ROLE_SHORT={coordinator:'Coordinator',participant:'Participant',
+    associatedPartner:'Assoc. Partner',thirdParty:'Third Party'};
+  [...FILTERS.itRole].forEach(v=>addPill(
+    `IT role: ${ROLE_SHORT[v]||v}`, '',
+    ()=>{FILTERS.itRole.delete(v);syncCheckbox('itRole',v,false);apply();}
+  ));
+
+  // Funding type
+  [...FILTERS.schemeGroup].forEach(v=>addPill(
+    `Funding: ${v}`, '',
+    ()=>{FILTERS.schemeGroup.delete(v);syncCheckbox('schemeGroup',v,false);apply();}
+  ));
+
+  // Status
+  [...FILTERS.status].forEach(v=>addPill(
+    `Status: ${v}`, '',
+    ()=>{FILTERS.status.delete(v);syncCheckbox('status',v,false);apply();}
+  ));
+
+  // Countries
+  if(FILTERS.country.size){
+    const ctries=[...FILTERS.country];
+    const label=ctries.length===1
+      ?`Country: ${flag(ctries[0])} ${ctries[0]}`
+      :`Countries: ${ctries.map(c=>flag(c)).join('')} (${ctries.length})`;
+    addPill(label, '', ()=>{
+      FILTERS.country.clear();
+      document.querySelectorAll('[data-key="country"]').forEach(cb=>cb.checked=false);
+      apply();
+    });
+  }
+
+  // Domain (disciplines tab)
+  if(DOMAIN_FILTER){
+    addPill(`Discipline: ${DOMAIN_FILTER}`, 'pill-domain',
+      ()=>{DOMAIN_FILTER=null;apply();}
+    );
+  }
+
+  // Region (geography tab)
+  if(REGION_FILTER){
+    addPill(`Region: ${REGION_FILTER} partners`, 'pill-region',
+      ()=>{REGION_FILTER=null;apply();}
+    );
+  }
+
+  const el=document.getElementById('active-filters');
+  el.innerHTML=pills.join('');
+}
+
+function clearPill(i){
+  if(PILL_ACTIONS[i]) PILL_ACTIONS[i]();
+}
+
+function syncCheckbox(key, value, checked){
+  const cb=document.querySelector(`.sidebar input[data-key="${key}"][value="${value}"]`);
+  if(cb) cb.checked=checked;
+}
+
+/* ── TAB 1: CARDS ── */
+function renderCards(){
+  const grid=document.getElementById('grid');
+  if(!FILTERED.length){grid.innerHTML='<div class="empty"><span class="big">∅</span>No projects match.</div>';return;}
+  grid.innerHTML=FILTERED.map(p=>{
+    const flags=p.partnerCountries.slice(0,10).map(flag).join('')+(p.partnerCountries.length>10?` +${p.partnerCountries.length-10}`:'');
+    const kw=p.keywords?`<div class="card-kw">🏷 ${p.keywords}</div>`:'';
+    const scheme=p.schemeGroup?`<span class="tag tg-scheme">${p.schemeGroup}</span>`:'';
+    const itTag=`<span class="tag tg-${p.itRole}" style="border-style:dashed">IT · ${roleL(p.itRole)}</span>`;
+    return `<div class="card" onclick="openModal('${p.id}','${p.programme}')">
+      <div class="card-top">
+        <span class="card-acro">${p.acronym||'–'}</span>
+        <span class="card-title">${p.title}</span>
+      </div>
+      <div class="card-body">
+        ${kw}
+        <div class="card-tags">${progTag(p)}<span class="tag tg-${p.status}">${p.status}</span>${scheme}${itTag}</div>
+      </div>
+      <div class="card-foot">
+        <span class="card-dates">📅 ${fmtD(p.startDate)} → ${fmtD(p.endDate)}</span>
+        <span class="card-budget">${p.itEcContribution?fmtM(p.itEcContribution):p.ecMaxContribution?'Total: '+fmtM(p.ecMaxContribution):'–'}</span>
+        <span class="card-flags" title="${p.partnerCountries.join(', ')}">${flags}</span>
+        <a class="card-link" href="${p.cordisUrl}" target="_blank" onclick="event.stopPropagation()">CORDIS ↗</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── TAB 2: BUDGET ── */
+function destroyChart(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}}
+function renderBudget(){
+  const itEC=FILTERED.map(p=>p.itEcContribution||0).filter(x=>x>0);
+  const total=itEC.reduce((s,v)=>s+v,0);
+  const avg=itEC.length?total/itEC.length:0;
+  const sorted=[...itEC].sort((a,b)=>a-b);
+  const median=sorted.length?sorted[Math.floor(sorted.length/2)]:0;
+  const max=sorted.length?sorted[sorted.length-1]:0;
+
+  document.getElementById('budget-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-val">${FILTERED.length}</div><div class="stat-lbl">Projects</div><div class="stat-sub">${itEC.length} with known IT budget</div></div>
+    <div class="stat-card"><div class="stat-val">${fmtM(total)}</div><div class="stat-lbl">Total IT EU Contribution</div></div>
+    <div class="stat-card"><div class="stat-val">${fmtM(avg)}</div><div class="stat-lbl">Average per project</div></div>
+    <div class="stat-card"><div class="stat-val">${fmtM(median)}</div><div class="stat-lbl">Median</div></div>
+    <div class="stat-card"><div class="stat-val">${fmtM(max)}</div><div class="stat-lbl">Largest</div></div>
+    <div class="stat-card"><div class="stat-val">${FILTERED.filter(p=>p.itRole==='associatedPartner').length}</div><div class="stat-lbl">As Assoc. Partner</div></div>`;
+
+  // Histogram — always render, even with 1 project
+  const bins=[0,50,100,200,300,500,1000,2000,Infinity];
+  const labels=['<50k','50–100k','100–200k','200–300k','300–500k','500k–1M','1–2M','>2M'];
+  const counts=new Array(labels.length).fill(0);
+  if(itEC.length){
+    itEC.forEach(v=>{const k=v/1000;const i=bins.findIndex((b,j)=>k<bins[j+1]);if(i>=0)counts[i]++;});
+  } else {
+    // No known IT budgets — show a placeholder bar for project count
+    counts[0]=FILTERED.length;
+  }
+  destroyChart('chart-hist');
+  CHARTS['chart-hist']=new Chart(document.getElementById('chart-hist'),{
+    type:'bar',
+    data:{labels,datasets:[{data:counts,backgroundColor:'rgba(37,99,171,.7)',borderRadius:3,
+      label:itEC.length?'Projects':'Projects (budget unknown)'}]},
+    options:{responsive:true,maintainAspectRatio:true,
+      plugins:{legend:{display:!itEC.length},tooltip:{callbacks:{title:t=>t[0].label,label:c=>`${c.raw} project${c.raw!==1?'s':''}`}}},
+      scales:{y:{beginAtZero:true,ticks:{stepSize:1,precision:0}}}}
+  });
+
+  // By scheme group
+  const bySG={};
+  FILTERED.forEach(p=>{const g=p.schemeGroup||'Other';if(!bySG[g])bySG[g]={count:0,total:0};bySG[g].count++;bySG[g].total+=(p.itEcContribution||0);});
+  const sgE=Object.entries(bySG).sort((a,b)=>b[1].count-a[1].count);
+  const PAL=['rgba(37,99,171,.8)','rgba(109,40,217,.7)','rgba(146,96,10,.7)','rgba(22,101,52,.7)','rgba(153,27,27,.7)','rgba(74,144,217,.6)','rgba(156,163,175,.6)'];
+  destroyChart('chart-scheme');
+  CHARTS['chart-scheme']=new Chart(document.getElementById('chart-scheme'),{
+    type:'doughnut',
+    data:{labels:sgE.map(e=>`${e[0]} (${e[1].count})`),datasets:[{data:sgE.map(e=>e[1].count),backgroundColor:PAL}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}}}
+  });
+
+  // Time evolution
+  const byY={};
+  FILTERED.filter(p=>p.itEcContribution>0).forEach(p=>{
+    const y=fmtY(p.startDate);if(!y)return;
+    if(!byY[y])byY[y]={total:0,count:0};
+    byY[y].total+=p.itEcContribution;byY[y].count++;
+  });
+  // Also count projects without known IT budget
+  FILTERED.forEach(p=>{
+    const y=fmtY(p.startDate);if(!y)return;
+    if(!byY[y])byY[y]={total:0,count:0};
+    if(!p.itEcContribution||p.itEcContribution===0)byY[y].count++;
+  });
+  const years=Object.keys(byY).sort();
+  destroyChart('chart-time');
+  CHARTS['chart-time']=new Chart(document.getElementById('chart-time'),{
+    type:'bar',
+    data:{labels:years,datasets:[
+      {label:'IT EU contribution (M€)',data:years.map(y=>+(byY[y].total/1e6).toFixed(2)),backgroundColor:'rgba(37,99,171,.7)',yAxisID:'y',order:2},
+      {label:'Number of IT projects',data:years.map(y=>byY[y].count),type:'line',borderColor:'rgba(146,96,10,1)',backgroundColor:'rgba(146,96,10,.1)',yAxisID:'y1',tension:.3,order:1,pointRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,scales:{
+      y:{beginAtZero:true,title:{display:true,text:'M€'},grid:{color:'rgba(0,0,0,.04)'}},
+      y1:{beginAtZero:true,position:'right',title:{display:true,text:'Projects'},grid:{drawOnChartArea:false}}
+    },plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:14}}}}
+  });
+}
+
+/* ── TAB 3: DISCIPLINES & PARTNERS ── */
+
+// Topic code → thematic category
+const TOPIC_CATS={
+  'CL1':'Health','CL2':'Culture & Society','CL3':'Civil Security',
+  'CL4':'Digital & Industry','CL5':'Climate, Energy & Mobility',
+  'CL6':'Food, Bioeconomy & Environment','MISS':'EU Missions',
+  'INFRA':'Research Infrastructures','MSCA':'MSCA','ERC':'ERC',
+  'EIC':'EIC','JU':'Joint Undertakings','BBI':'Biobased Industries JU',
+  'IMI':'Health JU','FCH':'Hydrogen JU','SESAR':'Aviation JU',
+  'SFS':'Food Security','KBBE':'Bioeconomy'
+};
+function topicToCat(topic){
+  if(!topic||!topic.trim()) return null; // ← garde-fou clé vide
+  const t=topic.trim().toUpperCase();
+  const parts=t.split('-');
+  for(const p of parts){if(TOPIC_CATS[p])return TOPIC_CATS[p];}
+  for(const[k,v] of Object.entries(TOPIC_CATS))if(t.includes(k))return v;
+  return 'Other';
+}
+function projectCats(p, level){
+  // level='l1' → top domain, level='l2' → sub-domain (default)
+  if(p.domains&&Array.isArray(p.domains)&&p.domains.length>0){
+    // Use sub-domains if available — more informative than top-level
+    if(level!=='l1'&&p.domains_l2&&p.domains_l2.length>0) return p.domains_l2;
+    return p.domains;
+  }
+  // Fallback: decode topic codes into thematic categories
+  if(p.topics){
+    const cats=new Set();
+    p.topics.split(';').map(t=>t.trim()).filter(Boolean)
+      .forEach(t=>{const c=topicToCat(t);if(c)cats.add(c);});
+    if(cats.size>0) return [...cats];
+  }
+  return [];
+}
+
+function renderDisciplines(){
+  const domCount={};
+  const domToIds={};
+  FILTERED.forEach(p=>{
+    const cats=projectCats(p);
+    const key=p.id+'|'+p.programme;
+    cats.forEach(d=>{
+      if(!d) return; // ← ignorer toute clé vide/null résiduelle
+      domCount[d]=(domCount[d]||0)+1;
+      if(!domToIds[d])domToIds[d]=new Set();
+      domToIds[d].add(key);
+    });
+  });
+  window._domToIds=domToIds;
+
+  // Filter out any accidental empty keys
+  const domE=Object.entries(domCount)
+    .filter(([k])=>k&&k.trim())     // ← pas de clé vide
+    .sort((a,b)=>b[1]-a[1]).slice(0,12);
+
+  const PAL=['#1a4f8a','#2563ab','#3b82f6','#60a5fa','#92600a','#6d28d9','#166534','#dc2626','#0891b2','#be185d','#78350f','#0f766e'];
+  destroyChart('chart-domains');
+  if(domE.length){
+    CHARTS['chart-domains']=new Chart(document.getElementById('chart-domains'),{
+      type:'doughnut',
+      data:{labels:domE.map(e=>e[0]),datasets:[{data:domE.map(e=>e[1]),backgroundColor:PAL}]},
+      options:{responsive:true,maintainAspectRatio:true,
+        plugins:{legend:{position:'right',labels:{font:{size:9},boxWidth:10}},
+        tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw} project${c.raw!==1?'s':''}`}}}}
+    });
+    // No warning message — topic categories are perfectly valid
+    document.getElementById('domain-list').innerHTML=domE.map(([d,n])=>`
+      <div class="domain-item ${DOMAIN_FILTER===d?'on':''}" onclick="toggleDomain('${d}')">
+        <span>${d}</span><span class="cc">${n}</span>
+      </div>`).join('')+(DOMAIN_FILTER?`<div class="domain-item" onclick="toggleDomain(null)" style="color:var(--red);margin-top:4px">✕ Clear filter</div>`:'');
+  } else {
+    document.getElementById('domain-list').innerHTML='<div style="color:var(--ink-light);font-size:.78rem;padding:6px">No domain data available.</div>';
+  }
+  renderPartners();
+}
+
+function toggleDomain(d){DOMAIN_FILTER=(DOMAIN_FILTER===d)?null:d;apply();}
+function toggleRegion(r){REGION_FILTER=(REGION_FILTER===r)?null:r;apply();}
+
+
+function renderPartners(){
+  const q=(document.getElementById('partner-q').value||'').toLowerCase();
+  const type=document.getElementById('partner-type').value;
+  const country=document.getElementById('partner-country-f').value;
+
+  const orgMap={};
+  FILTERED.forEach(p=>{
+    (p.partners||[]).forEach(o=>{
+      if(!o.name) return;
+      const nm=(o.name||'').toUpperCase();
+      if(nm.includes('INRAE TRANSFERT')||nm.includes('INRA TRANSFERT')) return;
+      const key=o.name+'||'+o.country;
+      if(!orgMap[key])orgMap[key]={name:o.name,shortName:o.shortName,country:o.country,activityType:o.activityType,pic:o.pic||'',projects:0,totalEC:0};
+      orgMap[key].projects++;
+      orgMap[key].totalEC+=(o.ecContribution||0);
+      // Keep PIC if not yet stored
+      if(!orgMap[key].pic&&o.pic) orgMap[key].pic=o.pic;
+    });
+  });
+
+  let rows=Object.values(orgMap)
+    .filter(o=>!q||o.name.toLowerCase().includes(q))
+    .filter(o=>!type||o.activityType===type)
+    .filter(o=>!country||o.country===country)
+    .sort((a,b)=>b.projects-a.projects);
+
+  const total=rows.length;
+  rows=rows.slice(PARTNER_PAGE*PER_PAGE,(PARTNER_PAGE+1)*PER_PAGE);
+  const CORDIS_ORG='https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/how-to-participate/org-details/';
+  document.getElementById('partner-tbody').innerHTML=rows.length
+    ?rows.map(o=>{
+        const nm=(o.name||'').toUpperCase();
+        const sn=(o.shortName||'').toUpperCase();
+        const isINRAE=sn==='INRAE'||sn==='INRA'||nm.includes("INSTITUT NATIONAL DE RECHERCHE POUR L'AGRICULTURE")||nm.includes("INSTITUT NATIONAL DE LA RECHERCHE AGRONOMIQUE");
+        const style=isINRAE?'background:#e8f5ec;color:#1e5631;font-weight:600':'';
+        const picCell=o.pic
+          ?`<a href="${CORDIS_ORG}${o.pic}" target="_blank" style="font-family:'Fira Code',monospace;font-size:.67rem;color:var(--it-mid);text-decoration:underline">${o.pic}</a>`
+          :'–';
+        return `<tr style="${style}">
+          <td>${o.name}${isINRAE?' ✦ INRAE':''}</td>
+          <td>${flag(o.country)} ${o.country}</td>
+          <td>${o.activityType||'–'}</td>
+          <td>${picCell}</td>
+          <td>${o.projects}</td>
+          <td>${o.totalEC?fmtM(o.totalEC):'–'}</td>
+        </tr>`;
+      }).join('')
+    :'<tr><td colspan="6" style="text-align:center;color:var(--ink-light);padding:12px">No partners match.</td></tr>';
+
+  const pages=Math.ceil(total/PER_PAGE);
+  const pager=document.getElementById('partner-pager');
+  pager.innerHTML=`<span style="color:var(--ink-light);margin-right:4px">${total} orgs</span>`;
+  if(pages>1)for(let i=0;i<Math.min(pages,10);i++)pager.innerHTML+=`<button class="${i===PARTNER_PAGE?'on':''}" onclick="setPartnerPage(${i})">${i+1}</button>`;
+}
+function setPartnerPage(p){PARTNER_PAGE=p;renderPartners();}
+
+/* ── TAB 4: GEOGRAPHY ── */
+function renderGeo(){
+  const cc={};
+  FILTERED.forEach(p=>p.partnerCountries.forEach(c=>{cc[c]=(cc[c]||0)+1;}));
+  const sorted=Object.entries(cc).sort((a,b)=>b[1]-a[1]);
+  const top25=sorted.slice(0,25);
+
+  destroyChart('chart-countries');
+  CHARTS['chart-countries']=new Chart(document.getElementById('chart-countries'),{
+    type:'bar',
+    data:{labels:top25.map(([c])=>flag(c)+' '+c),datasets:[{data:top25.map(([,n])=>n),backgroundColor:'rgba(37,99,171,.72)',borderRadius:3}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}
+  });
+
+
+  // (bubble map removed)
+
+  // Regions — enriched with flags, budget, sorted by participations
+  // Build per-country budget lookup
+  const countryBudget={};
+  FILTERED.forEach(p=>{
+    (p.partners||[]).forEach(o=>{
+      if(!o.country) return;
+      countryBudget[o.country]=(countryBudget[o.country]||0)+(o.ecContribution||0);
+    });
+  });
+
+  const rData={};
+  Object.keys(REGIONS).forEach(r=>rData[r]={count:0,budget:0,countries:[]});
+  rData['Other']={count:0,budget:0,countries:[]};
+  Object.entries(cc).forEach(([c,n])=>{
+    const r=getRegion(c);
+    rData[r].count+=(n||0);
+    rData[r].budget+=(countryBudget[c]||0);
+    rData[r].countries.push(c);
+  });
+
+  const maxR=Math.max(...Object.values(rData).map(d=>d.count),1);
+
+  // Sort by participation count descending
+  const sortedRegions=Object.entries(rData)
+    .filter(([,d])=>d.count>0)
+    .sort((a,b)=>b[1].count-a[1].count);
+
+  document.getElementById('region-grid').innerHTML=sortedRegions.map(([r,d])=>{
+    const flags=d.countries.sort((a,b)=>(cc[b]||0)-(cc[a]||0)).slice(0,8).map(flag).join(' ');
+    const budgetStr=d.budget>0?fmtM(d.budget):'–';
+    const isActive=REGION_FILTER===r;
+    return `<div class="region-card ${isActive?'region-active':''}"
+      onclick="toggleRegion('${r}')"
+      style="cursor:pointer;transition:all .15s;${isActive?'border-color:var(--it);box-shadow:0 0 0 2px var(--it-pale);':''}"
+      onmouseover="if(!${isActive})this.style.borderColor='var(--it-light)'"
+      onmouseout="if(!${isActive})this.style.borderColor='var(--rule)'">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+        <div class="region-name" style="${isActive?'color:var(--it)':''}">${r}</div>
+        ${isActive?`<span style="font-family:'Fira Code',monospace;font-size:.6rem;color:var(--it);cursor:pointer" onclick="event.stopPropagation();toggleRegion('${r}')">✕</span>`:''}
+      </div>
+      <div style="font-size:.82rem;margin:4px 0;letter-spacing:.03em">${flags}</div>
+      <div class="rbar-wrap"><div class="rbar-fill" style="width:${d.count/maxR*100}%;${isActive?'background:var(--it);':''}"></div></div>
+      <div class="rstat">${d.count} participations · ${budgetStr}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ── TAB 5: TIMELINE ── */
+function renderTimeline(){
+  const gf=document.getElementById('gantt-filter').value;
+  const gs=document.getElementById('gantt-sort').value;
+  let proj=FILTERED.filter(p=>(gf==='ALL'||p.status==='SIGNED')&&p.startDate&&p.endDate);
+  if(gs==='end-asc')proj.sort((a,b)=>a.endDate.localeCompare(b.endDate));
+  else if(gs==='start-asc')proj.sort((a,b)=>a.startDate.localeCompare(b.startDate));
+  else proj.sort((a,b)=>(a.acronym||'').localeCompare(b.acronym||''));
+
+  if(!proj.length){document.getElementById('gantt-wrap').innerHTML='<div class="empty"><span class="big">∅</span>No projects to display.</div>';return;}
+
+  const allD=proj.flatMap(p=>[p.startDate,p.endDate]).filter(Boolean);
+  let minD=new Date(allD.reduce((a,b)=>a<b?a:b));
+  let maxD=new Date(allD.reduce((a,b)=>a>b?a:b));
+  minD=new Date(minD.getFullYear(),minD.getMonth()-1,1);
+  maxD=new Date(maxD.getFullYear(),maxD.getMonth()+2,1);
+  const totalMs=maxD-minD;
+
+  // Year ticks
+  const ticks=[];
+  let t=new Date(minD.getFullYear(),0,1);
+  while(t<=maxD){if(t>=minD)ticks.push(new Date(t));t=new Date(t.getFullYear()+1,0,1);}
+
+  const today=new Date();
+  const todayPct=Math.max(0,Math.min(100,((today-minD)/totalMs*100)));
+  const pct=d=>Math.max(0,((new Date(d)-minD)/totalMs*100)).toFixed(2);
+  const w=(s,e)=>Math.max(.5,((new Date(e)-new Date(s))/totalMs*100)).toFixed(2);
+
+  const head=`<div class="g-head" style="display:flex;margin-bottom:5px;border-bottom:1px solid var(--rule);padding-bottom:5px;position:sticky;top:0;background:var(--white);z-index:1">
+    <div class="g-label-col" style="width:180px;flex-shrink:0;font-family:'Fira Code',monospace;font-size:.56rem;color:var(--ink-light);text-transform:uppercase">Project</div>
+    <div style="flex:1;display:flex">${ticks.map(t=>`<div style="flex:1;font-family:'Fira Code',monospace;font-size:.55rem;color:var(--ink-xlight);text-align:center;border-left:1px dotted var(--rule)">${t.getFullYear()}</div>`).join('')}</div>
+  </div>`;
+
+  const rows=proj.map(p=>`
+    <div class="g-row">
+      <div style="width:180px;flex-shrink:0;font-size:.69rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px;cursor:pointer;color:var(--ink-mid)" onclick="openModal('${p.id}','${p.programme}')" title="${p.title}">${p.acronym||p.title.slice(0,18)}</div>
+      <div style="flex:1;position:relative;height:13px">
+        <div class="g-bar" style="left:${pct(p.startDate)}%;width:${w(p.startDate,p.endDate)}%;background:var(--it);opacity:.85"
+             onclick="openModal('${p.id}','${p.programme}')"
+             title="${p.acronym} | ${fmtD(p.startDate)} → ${fmtD(p.endDate)} | IT: ${roleL(p.itRole)}"></div>
+        <div style="position:absolute;top:0;bottom:0;width:1.5px;background:var(--red);opacity:.4;left:${todayPct}%;pointer-events:none"></div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('gantt-wrap').innerHTML=head+rows;
+
+  // ── Simultaneous active projects per year ─────────────────────────────────
+  // Use ALL IT_PROJECTS (not just filtered) for full picture, but respect filter
+  const allProj=FILTERED.filter(p=>p.startDate&&p.endDate);
+  if(allProj.length){
+    // Collect year range across all projects
+    const years=[];
+    const minY=Math.min(...allProj.map(p=>parseInt(p.startDate)));
+    const maxY=Math.max(...allProj.map(p=>parseInt(p.endDate)));
+    for(let y=minY;y<=maxY;y++) years.push(y);
+
+    // For each year, count how many projects were active (start<=y and end>=y)
+    const concurrent=years.map(y=>({
+      y,
+      count:allProj.filter(p=>{
+        const s=parseInt(p.startDate);
+        const e=parseInt(p.endDate);
+        return s<=y&&e>=y;
+      }).length
+    }));
+
+    destroyChart('chart-concurrent');
+    CHARTS['chart-concurrent']=new Chart(document.getElementById('chart-concurrent'),{
+      type:'bar',
+      data:{
+        labels:concurrent.map(d=>d.y),
+        datasets:[{
+          label:'Active IT projects',
+          data:concurrent.map(d=>d.count),
+          backgroundColor:concurrent.map(d=>d.y===new Date().getFullYear()?'rgba(37,99,171,1)':'rgba(37,99,171,.6)'),
+          borderRadius:3
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:true,
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:c=>`${c.raw} active project${c.raw!==1?'s':''}`}}
+        },
+        scales:{
+          y:{beginAtZero:true,ticks:{stepSize:1,precision:0},title:{display:true,text:'Active projects'}},
+          x:{title:{display:true,text:'Year'}}
+        }
+      }
+    });
+  }
+}
+
+/* ── MODAL ── */
+function openModal(id,prog){
+  const p=ALL.find(x=>x.id===id&&x.programme===prog)||ALL.find(x=>x.id===id);
+  if(!p)return;
+  document.getElementById('m-acro').textContent=p.acronym||'–';
+  document.getElementById('m-title').textContent=p.title;
+  document.getElementById('m-obj').textContent=p.objective||'No objective available.';
+  document.getElementById('m-link').href=p.cordisUrl;
+  document.getElementById('m-tags').innerHTML=`${progTag(p)}<span class="tag tg-${p.status}">${p.status}</span>
+    ${p.schemeGroup?`<span class="tag tg-scheme">${p.schemeGroup}</span>`:''}
+    <span class="tag tg-${p.itRole}" style="border-style:dashed">IT · ${roleL(p.itRole)}</span>`;
+  document.getElementById('m-info').innerHTML=`
+    <dt>Programme</dt><dd>${p.frameworkProgramme||p.programme}</dd>
+    <dt>Legal basis</dt><dd>${p.legalBasis||'–'}</dd>
+    <dt>Topic</dt><dd>${p.topics||'–'}</dd>
+    <dt>Funding scheme</dt><dd>${p.fundingScheme||'–'}</dd>
+    <dt>Dates</dt><dd>${fmtD(p.startDate)} → ${fmtD(p.endDate)}</dd>
+    <dt>Total EU budget</dt><dd>${p.ecMaxContribution?fmtM(p.ecMaxContribution):'–'}</dd>
+    <dt>Keywords</dt><dd>${p.keywords||'–'}</dd>
+    <dt>Domains</dt><dd>${(p.domains||[]).join(', ')||'–'}</dd>`;
+  document.getElementById('m-it').innerHTML=`
+    <dt>IT Role</dt><dd>${roleL(p.itRole)}</dd>
+    <dt>IT EU Contribution</dt><dd>${p.itEcContribution?fmtM(p.itEcContribution):'Not specified'}</dd>
+    <dt>Partners</dt><dd>${p.partnerCount} organisations</dd>
+    <dt>Countries</dt><dd>${p.partnerCountries.map(c=>flag(c)+' '+c).join(', ')||'–'}</dd>`;
+  document.getElementById('m-pt-title').textContent=`Partners (${p.partnerCount})`;
+  const rk={coordinator:0,participant:1,associatedPartner:2,thirdParty:3};
+  const sorted=[...p.partners].sort((a,b)=>(rk[a.role]??9)-(rk[b.role]??9)||a.name.localeCompare(b.name,'en'));
+  document.getElementById('m-partners').innerHTML=sorted.map(o=>{
+    const nm=(o.name||'').toUpperCase();
+    const sn=(o.shortName||'').toUpperCase();
+    const isT=nm.includes('INRAE TRANSFERT')||nm.includes('INRA TRANSFERT');
+    const isINRAE=!isT&&(sn==='INRAE'||sn==='INRA'||nm.includes("INSTITUT NATIONAL DE RECHERCHE POUR L'AGRICULTURE")||nm.includes("INSTITUT NATIONAL DE LA RECHERCHE AGRONOMIQUE"));
+    const rowStyle=isT?'background:var(--it-pale);color:var(--it);font-weight:700':isINRAE?'background:#e8f5ec;color:#1e5631;font-weight:600':'';
+    return `<tr style="${rowStyle}">
+      <td>${o.name}${isT?' ✦ IT':isINRAE?' ✦ INRAE':''}</td>
+      <td>${flag(o.country)} ${o.country}</td>
+      <td>${roleL(o.role)}</td>
+      <td>${o.activityType||'–'}</td>
+      <td>${o.ecContribution?fmtM(o.ecContribution):'–'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';}
+function overlayClick(e){if(e.target===document.getElementById('overlay'))closeModal();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+/* ── EVENTS ── */
+function bindEvents(){
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('on'));
+    btn.classList.add('on');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('on');
+    // Show Sort only on Projects tab
+    const sortBlock=document.getElementById('sort-block');
+    if(sortBlock) sortBlock.style.display=btn.dataset.tab==='projects'?'':'none';
+  }));
+  document.getElementById('search').addEventListener('input',e=>{SEARCH=e.target.value;apply();});
+  document.getElementById('sort').addEventListener('change',e=>{SORT=e.target.value;apply();});
+  document.querySelector('.sidebar').addEventListener('change',e=>{
+    if(e.target.type!=='checkbox')return;
+    const k=e.target.dataset.key;
+    e.target.checked?FILTERS[k].add(e.target.value):FILTERS[k].delete(e.target.value);
+    apply();
+  });
+  document.getElementById('btn-reset').addEventListener('click',()=>{
+    SEARCH='';SORT='startDate-desc';DOMAIN_FILTER=null;REGION_FILTER=null;
+    Object.values(FILTERS).forEach(s=>s.clear());
+    document.getElementById('search').value='';
+    document.getElementById('sort').value='startDate-desc';
+    document.querySelectorAll('.sidebar input[type=checkbox]').forEach(cb=>cb.checked=false);
+    apply();
+  });
+  ['partner-q','partner-type','partner-country-f'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.addEventListener('input',()=>{PARTNER_PAGE=0;renderPartners();});
+    el.addEventListener('change',()=>{PARTNER_PAGE=0;renderPartners();});
+  });
+  document.getElementById('gantt-sort').addEventListener('change',renderTimeline);
+  document.getElementById('gantt-filter').addEventListener('change',renderTimeline);
+}
+function setView(v){
+  document.getElementById('grid').classList.toggle('cols2',v==='grid');
+  document.getElementById('v-list').classList.toggle('on',v==='list');
+  document.getElementById('v-grid').classList.toggle('on',v==='grid');
+}
+load();
+</script>
+</body>
+</html>

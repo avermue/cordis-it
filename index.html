@@ -512,7 +512,15 @@ const getRegion=cc=>{for(const[r,cs] of Object.entries(REGIONS))if(cs.includes(c
 async function load(){
   try{
     const r=await fetch(DATA_URL);if(!r.ok)throw new Error(`HTTP ${r.status}`);
-    ALL=await r.json();
+    const raw=await r.json();
+    // Support both formats: plain array (old) or {generatedAt, projects} (new)
+    if(Array.isArray(raw)){
+      ALL=raw;
+      window._generatedAt=null;
+    } else {
+      ALL=raw.projects||[];
+      window._generatedAt=raw.generatedAt||null;
+    }
     ALL.forEach(p=>{
       p.programme=normProg(p);
       p.itRole=normRole(p.itRole||'');
@@ -533,12 +541,17 @@ function init(){
   buildSidebar();
   apply();
   bindEvents();
-  // Update date — use contentUpdateDate from most recent project if available
-  const dates = IT_PROJECTS.map(p=>p.contentUpdateDate||p.startDate||'').filter(Boolean).sort();
-  const latest = dates.length ? new Date(dates[dates.length-1]) : new Date();
-  const dateStr = latest.toLocaleDateString('en-GB',{year:'numeric',month:'short',day:'numeric'});
-  const el = document.getElementById('update-date');
-  if(el) el.textContent = `Data: CORDIS · Updated ${dateStr}`;
+  // Update date — from generatedAt written by prepare_data.py
+  const el=document.getElementById('update-date');
+  if(el){
+    if(window._generatedAt){
+      const d=new Date(window._generatedAt);
+      const dateStr=d.toLocaleDateString('en-GB',{year:'numeric',month:'short',day:'numeric'});
+      el.textContent=`CORDIS data · ${dateStr}`;
+    } else {
+      el.textContent='CORDIS data';
+    }
+  }
 }
 
 /* ── KPIs in header ── */

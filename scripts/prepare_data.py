@@ -368,12 +368,17 @@ def main():
     log(f"  Partner countries: {ctries}")
 
     # ── Export ────────────────────────────────────────────────────────────────
+    from datetime import datetime, timezone
+    output = {
+        "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "projects": all_projects
+    }
     with open(OUTPUT, "w", encoding="utf-8") as f:
-        json.dump(all_projects, f, ensure_ascii=False, indent=2)
+        json.dump(output, f, ensure_ascii=False, indent=2)
     size_mb = os.path.getsize(OUTPUT) / 1024 / 1024
     log(f"\n✅  {OUTPUT}  ({size_mb:.1f} MB)")
     log(f"\nNext step:")
-    log(f"  cd ~/codium/cordis-inrae && python3 -m http.server 8080")
+    log(f"  cd ~/codium/cordis-it && python3 -m http.server 8080")
 
 
 if __name__ == "__main__":

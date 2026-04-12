@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>INRAE Transfert · EU Projects Observatory</title>
+<title>INRAE Transfert · EU Projects</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Fira+Code:wght@400;500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -233,7 +233,7 @@ dl.kv dd{color:var(--ink)}
 
 <header class="hdr">
   <div class="hdr-top">
-    <div class="hdr-logo">INRAE Transfert <em>· EU Projects Observatory</em></div>
+    <div class="hdr-logo">INRAE Transfert <em>· EU Projects</em></div>
     <div class="hdr-search">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" opacity=".5">
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -248,6 +248,7 @@ dl.kv dd{color:var(--ink)}
     <button class="tab-btn" data-tab="geography">🌍 Geography</button>
     <button class="tab-btn" data-tab="budget">💶 Budget</button>
     <button class="tab-btn" data-tab="timeline">📅 Timeline</button>
+    <div style="margin-left:auto;display:flex;align-items:center;padding:0 18px;font-family:'Fira Code',monospace;font-size:.62rem;color:rgba(255,255,255,.45)" id="update-date"></div>
   </nav>
 </header>
 
@@ -532,6 +533,12 @@ function init(){
   buildSidebar();
   apply();
   bindEvents();
+  // Update date — use contentUpdateDate from most recent project if available
+  const dates = IT_PROJECTS.map(p=>p.contentUpdateDate||p.startDate||'').filter(Boolean).sort();
+  const latest = dates.length ? new Date(dates[dates.length-1]) : new Date();
+  const dateStr = latest.toLocaleDateString('en-GB',{year:'numeric',month:'short',day:'numeric'});
+  const el = document.getElementById('update-date');
+  if(el) el.textContent = `Data: CORDIS · Updated ${dateStr}`;
 }
 
 /* ── KPIs in header ── */

@@ -332,6 +332,7 @@ def process(zip_bytes, prog):
             "fundingSchemeShort":  scheme_short,
             "objective":           ss(get(row, "objective")),   # full text, no truncation
             "keywords":            ss(get(row, "keywords")),
+            "contentUpdateDate":   ss(get(row, "contentUpdateDate", "content_update_date")),
             "cordisUrl":           f"https://cordis.europa.eu/project/id/{pid}",
             # ── INRAE ──────────────────────────────────────────────────────────
             "hasINRAE":            pid in ids_inrae,

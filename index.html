@@ -538,9 +538,11 @@ async function load(){
     if(Array.isArray(raw)){
       ALL=raw;
       window._generatedAt=null;
+      window._cordisDataDate=null;
     } else {
       ALL=raw.projects||[];
       window._generatedAt=raw.generatedAt||null;
+      window._cordisDataDate=raw.cordisDataDate||null;
     }
     ALL.forEach(p=>{
       p.programme=normProg(p);
@@ -562,14 +564,11 @@ function init(){
   buildSidebar();
   apply();
   bindEvents();
-  // Update date — from generatedAt written by prepare_data.py
+  // Update date — show real CORDIS data date (from contentUpdateDate of most recent record)
   const el=document.getElementById('update-date');
   if(el){
-    if(window._generatedAt){
-      el.textContent=`CORDIS data · ${window._generatedAt}`;
-    } else {
-      el.textContent='CORDIS data';
-    }
+    const date=window._cordisDataDate||window._generatedAt;
+    el.textContent=date?`CORDIS data · ${date}`:'CORDIS data';
   }
 }
 

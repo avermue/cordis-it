@@ -109,26 +109,60 @@ def best_role(existing, new_role, new_ec):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# DOWNLOAD
+# DOWNLOAD — smart: only re-download if CORDIS has published a newer dataset
 # ─────────────────────────────────────────────────────────────────────────────
+
+def get_zip_dataset_date(zip_bytes):
+    """Extract the most recent contentUpdateDate from project.json inside the ZIP."""
+    import io as _io
+    try:
+        with zipfile.ZipFile(_io.BytesIO(zip_bytes)) as zf:
+            names = [n for n in zf.namelist() if n.endswith('project.json')
+                     and 'organization' not in n.lower()]
+            if not names: return None
+            with zf.open(names[0]) as f:
+                projects = json.load(f)
+            dates = [p.get('contentUpdateDate','') for p in projects
+                     if p.get('contentUpdateDate')]
+            return max(dates) if dates else None
+    except Exception:
+        return None
 
 def load_zip(source, no_download):
     cache = source["cache"]
+
     if no_download and os.path.exists(cache):
         log(f"  Cache: {cache}")
         with open(cache, "rb") as f: return f.read()
+
+    # Download fresh copy
     log(f"  Downloading: {source['url']}")
     try:
         req = Request(source["url"], headers={"User-Agent": "Mozilla/5.0"})
         with urlopen(req, timeout=180) as r:
-            data = r.read()
-        os.makedirs(os.path.dirname(cache), exist_ok=True)
-        with open(cache, "wb") as f: f.write(data)
-        log(f"  ✓ {len(data)/1024/1024:.1f} MB")
-        return data
+            new_data = r.read()
     except URLError as e:
         log(f"  ✗ Network error: {e}")
+        if os.path.exists(cache):
+            log(f"  Using existing cache as fallback.")
+            with open(cache, "rb") as f: return f.read()
         sys.exit(1)
+
+    # Compare dataset date with cached version
+    if os.path.exists(cache):
+        with open(cache, "rb") as f:
+            old_data = f.read()
+        old_date = get_zip_dataset_date(old_data)
+        new_date = get_zip_dataset_date(new_data)
+        log(f"  Dataset date — cached: {old_date or 'unknown'}  |  new: {new_date or 'unknown'}")
+        if old_date and new_date and old_date == new_date:
+            log(f"  ✓ Dataset unchanged — keeping cache, skipping regeneration.")
+            return None  # Signal: no update needed for this source
+
+    os.makedirs(os.path.dirname(cache), exist_ok=True)
+    with open(cache, "wb") as f: f.write(new_data)
+    log(f"  ✓ {len(new_data)/1024/1024:.1f} MB — new dataset saved.")
+    return new_data
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -336,10 +370,18 @@ def main():
 
     all_projects = []
     seen_ids = {}
+    any_updated = False
 
     for source in SOURCES:
         zip_bytes = load_zip(source, args.no_download)
-        projects  = process(zip_bytes, source["prog"])
+        if zip_bytes is None:
+            # Dataset unchanged — load from cache to still build full JSON
+            log(f"  Loading from cache for merge: {source['cache']}")
+            with open(source["cache"], "rb") as f:
+                zip_bytes = f.read()
+        else:
+            any_updated = True
+        projects = process(zip_bytes, source["prog"])
         for p in projects:
             key = p["id"]
             if key in seen_ids:
@@ -347,6 +389,10 @@ def main():
             else:
                 seen_ids[key] = p["programme"]
                 all_projects.append(p)
+
+    if not any_updated and os.path.exists(OUTPUT):
+        log(f"\n✅ All datasets unchanged — JSON is already up to date, no commit needed.")
+        sys.exit(0)
 
     all_projects.sort(key=lambda p: p.get("startDate", ""), reverse=True)
 
@@ -369,10 +415,17 @@ def main():
 
     # ── Export ────────────────────────────────────────────────────────────────
     from datetime import datetime, timezone
+
+    # Most recent contentUpdateDate across all projects = real CORDIS data date
+    all_dates = [p.get("contentUpdateDate","") for p in all_projects if p.get("contentUpdateDate")]
+    cordis_data_date = max(all_dates)[:10] if all_dates else ""  # keep YYYY-MM-DD only
+
     output = {
-        "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        "projects": all_projects
+        "generatedAt":    datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "cordisDataDate": cordis_data_date,   # date of most recent CORDIS record
+        "projects":       all_projects
     }
+    log(f"  CORDIS data date : {cordis_data_date}")
     with open(OUTPUT, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
     size_mb = os.path.getsize(OUTPUT) / 1024 / 1024

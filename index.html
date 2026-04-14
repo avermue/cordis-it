@@ -244,8 +244,9 @@ dl.kv dd{color:var(--ink)}
   </div>
   <nav class="tab-bar">
     <button class="tab-btn on" data-tab="projects">📋 Projects</button>
-    <button class="tab-btn" data-tab="disciplines">🔬 Disciplines &amp; Partners</button>
+    <button class="tab-btn" data-tab="partners">🤝 Partners</button>
     <button class="tab-btn" data-tab="geography">🌍 Geography</button>
+    <button class="tab-btn" data-tab="disciplines">🔬 Disciplines</button>
     <button class="tab-btn" data-tab="budget">💶 Budget</button>
     <button class="tab-btn" data-tab="timeline">📅 Timeline</button>
     <div style="margin-left:auto;display:flex;align-items:center;padding:0 18px;font-family:'Fira Code',monospace;font-size:.62rem;color:rgba(255,255,255,.45)" id="update-date"></div>
@@ -332,54 +333,51 @@ dl.kv dd{color:var(--ink)}
     </div>
 
     <!-- TAB 3: DISCIPLINES & PARTNERS -->
-    <div class="tab-panel" id="tab-disciplines">
-      <div class="disc-grid">
-        <div class="chart-box">
-          <div class="chart-title">Scientific Domains (EuroSciVoc)</div>
-          <canvas id="chart-domains"></canvas>
-        </div>
-        <div class="chart-box">
-          <div class="chart-title">Domains — click to filter projects</div>
-          <div class="domain-list" id="domain-list"></div>
-        </div>
-        <div class="chart-box full">
-          <div class="chart-title">Partner Organisations</div>
-          <div class="partner-search">
-            <input type="text" id="partner-q" placeholder="Search organisation…">
-            <select id="partner-type">
-              <option value="">All types</option>
-              <option value="REC">REC — Research Centre</option>
-              <option value="HES">HES — Higher Education</option>
-              <option value="PRC">PRC — Private company</option>
-              <option value="PUB">PUB — Public body</option>
-              <option value="OTH">OTH — Other</option>
-            </select>
-            <select id="partner-region">
-              <option value="">All regions</option>
-              <option value="Northern Europe">Northern Europe</option>
-              <option value="Western Europe">Western Europe</option>
-              <option value="Southern Europe">Southern Europe</option>
-              <option value="Eastern Europe">Eastern Europe</option>
-              <option value="North America">North America</option>
-              <option value="China, Hong Kong & Taiwan">China, Hong Kong &amp; Taiwan</option>
-              <option value="Other">Other</option>
-            </select>
+    <!-- TAB 2: PARTNERS -->
+    <div class="tab-panel" id="tab-partners">
+      <div class="chart-box" style="margin-bottom:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+          <div class="chart-title" style="margin:0">Partner Organisations</div>
+          <div id="partner-filter-active" style="font-family:'Fira Code',monospace;font-size:.65rem;color:var(--it);display:none">
+            <span id="partner-filter-label"></span>
+            <span onclick="clearPartnerFilter()" style="cursor:pointer;margin-left:6px;opacity:.7">✕ Clear</span>
           </div>
-          <div style="overflow-x:auto">
-            <table class="ptable">
-              <thead><tr>
-                <th>Organisation</th><th>Country</th><th>Type</th>
-                <th>PIC</th><th>Projects with IT</th><th>Total EU contrib.</th>
-              </tr></thead>
-              <tbody id="partner-tbody"></tbody>
-            </table>
-          </div>
-          <div class="pager" id="partner-pager"></div>
         </div>
+        <div class="partner-search">
+          <input type="text" id="partner-q" placeholder="Search organisation…">
+          <select id="partner-type">
+            <option value="">All types</option>
+            <option value="REC">REC — Research Centre</option>
+            <option value="HES">HES — Higher Education</option>
+            <option value="PRC">PRC — Private company</option>
+            <option value="PUB">PUB — Public body</option>
+            <option value="OTH">OTH — Other</option>
+          </select>
+          <select id="partner-region">
+            <option value="">All regions</option>
+            <option value="Northern Europe">Northern Europe</option>
+            <option value="Western Europe">Western Europe</option>
+            <option value="Southern Europe">Southern Europe</option>
+            <option value="Eastern Europe">Eastern Europe</option>
+            <option value="North America">North America</option>
+            <option value="China, Hong Kong & Taiwan">China, Hong Kong &amp; Taiwan</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="ptable">
+            <thead><tr>
+              <th>Organisation</th><th>Country</th><th>Type</th>
+              <th>PIC</th><th>Projects with IT</th><th>Total EU contrib.</th>
+            </tr></thead>
+            <tbody id="partner-tbody"></tbody>
+          </table>
+        </div>
+        <div class="pager" id="partner-pager"></div>
       </div>
     </div>
 
-    <!-- TAB 4: GEOGRAPHY -->
+    <!-- TAB 3: GEOGRAPHY -->
     <div class="tab-panel" id="tab-geography">
       <div class="geo-grid">
         <div class="chart-box tall">
@@ -390,7 +388,20 @@ dl.kv dd{color:var(--ink)}
           <div class="section-title" style="margin-bottom:8px">Partner Regions</div>
           <div class="region-grid" id="region-grid"></div>
         </div>
-      
+      </div>
+    </div>
+
+    <!-- TAB 4: DISCIPLINES -->
+    <div class="tab-panel" id="tab-disciplines">
+      <div class="disc-grid">
+        <div class="chart-box">
+          <div class="chart-title">Scientific Domains (EuroSciVoc)</div>
+          <canvas id="chart-domains"></canvas>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">Domains — click to filter projects</div>
+          <div class="domain-list" id="domain-list"></div>
+        </div>
       </div>
     </div>
 
@@ -464,7 +475,7 @@ dl.kv dd{color:var(--ink)}
 const DATA_URL = 'data/inrae_projects.json';
 let ALL=[], IT_PROJECTS=[], FILTERED=[];
 let FILTERS={programme:new Set(),itRole:new Set(),schemeGroup:new Set(),status:new Set(),country:new Set()};
-let SEARCH='',SORT='startDate-desc',DOMAIN_FILTER=null,REGION_FILTER=null,PARTNER_PAGE=0;
+let SEARCH='',SORT='startDate-desc',DOMAIN_FILTER=null,REGION_FILTER=null,PARTNER_FILTER=null,PARTNER_PAGE=0;
 const PER_PAGE=25;
 let CHARTS={};
 
@@ -644,6 +655,10 @@ function apply(){
         if(!cats.includes(DOMAIN_FILTER)) return false;
       }
     }
+    if(PARTNER_FILTER){
+      // Filter projects that include this specific partner organisation
+      if(!p.partners.some(o=>o.name===PARTNER_FILTER.name&&o.country===PARTNER_FILTER.country)) return false;
+    }
     return true;
   });
   const[sk,sd]=SORT.split('-');
@@ -666,6 +681,7 @@ function renderAll(){
   renderActiveFilters();
   renderCards();
   renderBudget();
+  renderPartners();
   renderDisciplines();
   renderGeo();
   renderTimeline();
@@ -737,6 +753,13 @@ function renderActiveFilters(){
   if(DOMAIN_FILTER){
     addPill(`Discipline: ${DOMAIN_FILTER}`, 'pill-domain',
       ()=>{DOMAIN_FILTER=null;apply();}
+    );
+  }
+
+  // Partner filter
+  if(PARTNER_FILTER){
+    addPill(`Partner: ${PARTNER_FILTER.name}`, 'pill-region',
+      ()=>{PARTNER_FILTER=null;apply();}
     );
   }
 
@@ -941,7 +964,7 @@ function renderDisciplines(){
   } else {
     document.getElementById('domain-list').innerHTML='<div style="color:var(--ink-light);font-size:.78rem;padding:6px">No domain data available.</div>';
   }
-  renderPartners();
+  // renderPartners is now called from renderAll independently
 }
 
 function toggleDomain(d){DOMAIN_FILTER=(DOMAIN_FILTER===d)?null:d;apply();}
@@ -1027,12 +1050,16 @@ function renderPartners(){
         const nm=(o.name||'').toUpperCase();
         const sn=(o.shortName||'').toUpperCase();
         const isINRAE=sn==='INRAE'||sn==='INRA'||nm.includes("INSTITUT NATIONAL DE RECHERCHE POUR L'AGRICULTURE")||nm.includes("INSTITUT NATIONAL DE LA RECHERCHE AGRONOMIQUE");
-        const style=isINRAE?'background:#e8f5ec;color:#1e5631;font-weight:600':'';
+        const isActive=PARTNER_FILTER&&PARTNER_FILTER.name===o.name&&PARTNER_FILTER.country===o.country;
+        const baseStyle=isINRAE?'background:#e8f5ec;color:#1e5631;font-weight:600':'';
+        const activeStyle=isActive?'background:var(--it-pale);outline:2px solid var(--it);':'';
         const picCell=o.pic
-          ?`<a href="${CORDIS_ORG}${o.pic}" target="_blank" style="font-family:'Fira Code',monospace;font-size:.67rem;color:var(--it-mid);text-decoration:underline">${o.pic}</a>`
+          ?`<a href="${CORDIS_ORG}${o.pic}" target="_blank" style="font-family:'Fira Code',monospace;font-size:.67rem;color:var(--it-mid);text-decoration:underline" onclick="event.stopPropagation()">${o.pic}</a>`
           :'–';
-        return `<tr style="${style}">
-          <td>${o.name}${isINRAE?' ✦ INRAE':''}</td>
+        const nameStr=`${o.name}${isINRAE?' ✦ INRAE':''}${isActive?' 🔍':''}`;
+        return `<tr style="${baseStyle};${activeStyle}cursor:pointer" title="Click to filter projects by this partner"
+          onclick="setPartnerFilter(${JSON.stringify({name:o.name,country:o.country})})">
+          <td>${nameStr}</td>
           <td>${flag(o.country)} ${o.country}</td>
           <td>${o.activityType||'–'}</td>
           <td>${picCell}</td>
@@ -1042,11 +1069,33 @@ function renderPartners(){
       }).join('')
     :'<tr><td colspan="6" style="text-align:center;color:var(--ink-light);padding:12px">No partners match.</td></tr>';
 
+  // Update active partner filter indicator
+  const pfEl=document.getElementById('partner-filter-active');
+  const pfLabel=document.getElementById('partner-filter-label');
+  if(pfEl&&pfLabel){
+    if(PARTNER_FILTER){
+      pfEl.style.display='';
+      pfLabel.textContent=`Filtering projects by: ${PARTNER_FILTER.name}`;
+    } else {
+      pfEl.style.display='none';
+    }
+  }
+
   const pages=Math.ceil(total/PER_PAGE);
   const pager=document.getElementById('partner-pager');
   pager.innerHTML=`<span style="color:var(--ink-light);margin-right:4px">${total} orgs</span>`;
   if(pages>1)for(let i=0;i<Math.min(pages,10);i++)pager.innerHTML+=`<button class="${i===PARTNER_PAGE?'on':''}" onclick="setPartnerPage(${i})">${i+1}</button>`;
 }
+function setPartnerFilter(org){
+  // Toggle: click same partner again to deselect
+  if(PARTNER_FILTER&&PARTNER_FILTER.name===org.name&&PARTNER_FILTER.country===org.country){
+    PARTNER_FILTER=null;
+  } else {
+    PARTNER_FILTER=org;
+  }
+  apply();
+}
+function clearPartnerFilter(){PARTNER_FILTER=null;apply();}
 function setPartnerPage(p){PARTNER_PAGE=p;renderPartners();}
 
 /* ── TAB 4: GEOGRAPHY ── */
@@ -1262,9 +1311,9 @@ function bindEvents(){
     document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('on'));
     btn.classList.add('on');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('on');
-    // Show Sort only on Projects tab
+    // Show Sort only on Projects and Partners tabs
     const sortBlock=document.getElementById('sort-block');
-    if(sortBlock) sortBlock.style.display=btn.dataset.tab==='projects'?'':'none';
+    if(sortBlock) sortBlock.style.display=(btn.dataset.tab==='projects'||btn.dataset.tab==='partners')?'':'none';
   }));
   document.getElementById('search').addEventListener('input',e=>{SEARCH=e.target.value;apply();});
   document.getElementById('sort').addEventListener('change',e=>{SORT=e.target.value;apply();});
@@ -1275,7 +1324,7 @@ function bindEvents(){
     apply();
   });
   document.getElementById('btn-reset').addEventListener('click',()=>{
-    SEARCH='';SORT='startDate-desc';DOMAIN_FILTER=null;REGION_FILTER=null;
+    SEARCH='';SORT='startDate-desc';DOMAIN_FILTER=null;REGION_FILTER=null;PARTNER_FILTER=null;
     Object.values(FILTERS).forEach(s=>s.clear());
     document.getElementById('search').value='';
     document.getElementById('sort').value='startDate-desc';

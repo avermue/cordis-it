@@ -477,13 +477,15 @@ function schemeGroup(scheme){
 }
 
 /* ── UTILS ── */
-// CORDIS uses some non-ISO-3166-1-alpha-2 codes — map to correct emoji codes
+// CORDIS uses some non-ISO-3166-1-alpha-2 codes — map to correct codes
 const CC_NORM={'EL':'GR','UK':'GB'};
+// Use flag images for cross-platform compatibility (Windows doesn't support flag emojis)
 const flag=cc=>{
   if(!cc||cc.length!==2) return cc||'';
-  const c=CC_NORM[cc]||cc;
-  const o=0x1F1E6-65;
-  return String.fromCodePoint(c.charCodeAt(0)+o)+String.fromCodePoint(c.charCodeAt(1)+o);
+  const c=(CC_NORM[cc]||cc).toLowerCase();
+  return `<img src="https://flagcdn.com/16x12/${c}.png" alt="${cc}" title="${cc}"
+    style="width:16px;height:12px;vertical-align:middle;border-radius:1px;margin:0 1px"
+    onerror="this.replaceWith(document.createTextNode('${cc}'))">`;
 };
 const fmtM=n=>n>=1e6?(n/1e6).toFixed(1)+'M€':n>=1e3?Math.round(n/1e3)+'k€':n>0?n+'€':'–';
 const fmtD=d=>d?d.slice(0,7):'–';
@@ -587,7 +589,7 @@ function buildSidebar(){
 
   // Partner country dropdown
   const psel=document.getElementById('partner-country-f');
-  ctries.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=flag(c)+' '+c;psel.appendChild(o);});
+  ctries.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=(CC_NORM[c]||c)+' '+c;psel.appendChild(o);});
 }
 
 function buildList(elId,key,vals,getter,labelFn){
@@ -1004,7 +1006,7 @@ function renderGeo(){
   destroyChart('chart-countries');
   CHARTS['chart-countries']=new Chart(document.getElementById('chart-countries'),{
     type:'bar',
-    data:{labels:top25.map(([c])=>flag(c)+' '+c),datasets:[{data:top25.map(([,n])=>n),backgroundColor:'rgba(37,99,171,.72)',borderRadius:3}]},
+    data:{labels:top25.map(([c])=>(CC_NORM[c]||c)+' '+c),datasets:[{data:top25.map(([,n])=>n),backgroundColor:'rgba(37,99,171,.72)',borderRadius:3}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}
   });
 

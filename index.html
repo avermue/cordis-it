@@ -238,7 +238,7 @@ dl.kv dd{color:var(--ink)}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" opacity=".5">
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
-      <input type="text" id="search" placeholder="Search acronym, title, keywords…" autocomplete="off">
+      <input type="text" id="search" placeholder="Search projects, partners, topics…" autocomplete="off">
     </div>
     <div class="hdr-kpis" id="hdr-kpis"></div>
   </div>
@@ -344,7 +344,6 @@ dl.kv dd{color:var(--ink)}
           </div>
         </div>
         <div class="partner-search">
-          <input type="text" id="partner-q" placeholder="Search organisation…">
           <select id="partner-type">
             <option value="">All types</option>
             <option value="REC">REC — Research Centre</option>
@@ -367,7 +366,7 @@ dl.kv dd{color:var(--ink)}
         <div style="overflow-x:auto">
           <table class="ptable">
             <thead><tr>
-              <th>Organisation</th><th>Country</th><th>Type</th>
+              <th>Organisation</th><th>Abbrev.</th><th>Country</th><th>Type</th>
               <th>PIC</th><th>Projects with IT</th><th>Total EU contrib.</th>
             </tr></thead>
             <tbody id="partner-tbody"></tbody>
@@ -627,9 +626,16 @@ function buildList(elId,key,vals,getter,labelFn){
 
 /* ── FILTER ── */
 function apply(){
-  const q=SEARCH.toLowerCase();
+  const q=SEARCH.toLowerCase().trim();
   FILTERED=IT_PROJECTS.filter(p=>{
-    if(q&&!`${p.acronym} ${p.title} ${p.keywords} ${p.objective}`.toLowerCase().includes(q)) return false;
+    if(q){
+      // Build a searchable string from all relevant fields
+      const partnerNames=p.partners
+        ? p.partners.map(o=>`${o.name||''} ${o.shortName||''}`).join(' ')
+        : '';
+      const searchable=`${p.acronym} ${p.title} ${p.keywords} ${p.objective} ${p.topics} ${p.fundingScheme} ${p.legalBasis} ${partnerNames}`.toLowerCase();
+      if(!searchable.includes(q)) return false;
+    }
     if(FILTERS.programme.size&&!FILTERS.programme.has(p.programme)) return false;
     if(FILTERS.itRole.size&&!FILTERS.itRole.has(p.itRole)) return false;
     if(FILTERS.schemeGroup.size&&!FILTERS.schemeGroup.has(p.schemeGroup)) return false;
@@ -978,7 +984,7 @@ function toggleRegion(r){
 
 
 function renderPartners(){
-  const q=(document.getElementById('partner-q').value||'').toLowerCase();
+  const q=SEARCH.toLowerCase().trim(); // unified search from header
   const type=document.getElementById('partner-type').value;
   const partnerRegion=document.getElementById('partner-region').value;
 
@@ -986,28 +992,23 @@ function renderPartners(){
   const allowedCountries=new Set();
   let hasCountryFilter=false;
 
-  // From sidebar country checkboxes
   if(FILTERS.country.size){
     hasCountryFilter=true;
     FILTERS.country.forEach(c=>allowedCountries.add(c));
   }
-  // From geography REGION_FILTER (tab click)
   if(REGION_FILTER){
     hasCountryFilter=true;
     const regionCodes=REGIONS[REGION_FILTER]||[];
     if(REGION_FILTER==='Other'){
       const allNamed=Object.values(REGIONS).flat();
-      // Add all countries in data that are not in named regions
       IT_PROJECTS.forEach(p=>p.partnerCountries.forEach(c=>{
         if(!allNamed.includes(c)&&!allNamed.includes(CC_NORM[c]||c)) allowedCountries.add(c);
       }));
     } else {
       regionCodes.forEach(c=>allowedCountries.add(c));
-      // Also add CORDIS variants (EL for GR, UK for GB)
       Object.entries(CC_NORM).forEach(([k,v])=>{if(regionCodes.includes(v))allowedCountries.add(k);});
     }
   }
-  // From partner region dropdown (local to this table)
   if(partnerRegion){
     hasCountryFilter=true;
     const regionCodes=REGIONS[partnerRegion]||[];
@@ -1022,6 +1023,7 @@ function renderPartners(){
     }
   }
 
+  // Build org map from FILTERED projects
   const orgMap={};
   FILTERED.forEach(p=>{
     (p.partners||[]).forEach(o=>{
@@ -1029,7 +1031,7 @@ function renderPartners(){
       const nm=(o.name||'').toUpperCase();
       if(nm.includes('INRAE TRANSFERT')||nm.includes('INRA TRANSFERT')) return;
       const key=o.name+'||'+o.country;
-      if(!orgMap[key])orgMap[key]={name:o.name,shortName:o.shortName,country:o.country,activityType:o.activityType,pic:o.pic||'',projects:0,totalEC:0};
+      if(!orgMap[key])orgMap[key]={name:o.name,shortName:o.shortName||'',country:o.country,activityType:o.activityType,pic:o.pic||'',projects:0,totalEC:0};
       orgMap[key].projects++;
       orgMap[key].totalEC+=(o.ecContribution||0);
       if(!orgMap[key].pic&&o.pic) orgMap[key].pic=o.pic;
@@ -1037,7 +1039,11 @@ function renderPartners(){
   });
 
   let rows=Object.values(orgMap)
-    .filter(o=>!q||o.name.toLowerCase().includes(q))
+    .filter(o=>{
+      if(!q) return true;
+      // Strict match on org name or shortName — not on project fields
+      return o.name.toLowerCase().includes(q)||(o.shortName||'').toLowerCase().includes(q);
+    })
     .filter(o=>!type||o.activityType===type)
     .filter(o=>!hasCountryFilter||allowedCountries.has(o.country)||allowedCountries.has(CC_NORM[o.country]||o.country))
     .sort((a,b)=>b.projects-a.projects);
@@ -1065,6 +1071,7 @@ function renderPartners(){
         return `<tr style="${baseStyle};${activeStyle}cursor:pointer" title="Click to filter projects by this partner"
           onclick="setPartnerFilter(window._partnerRows[${idx}])">
           <td>${nameStr}</td>
+          <td style="font-family:'Fira Code',monospace;font-size:.7rem;color:var(--ink-light)">${o.shortName||'–'}</td>
           <td>${flag(o.country)} ${o.country}</td>
           <td>${o.activityType||'–'}</td>
           <td>${picCell}</td>
@@ -1072,7 +1079,7 @@ function renderPartners(){
           <td>${o.totalEC?fmtM(o.totalEC):'–'}</td>
         </tr>`;
       }).join('')
-    :'<tr><td colspan="6" style="text-align:center;color:var(--ink-light);padding:12px">No partners match.</td></tr>';
+    :'<tr><td colspan="7" style="text-align:center;color:var(--ink-light);padding:12px">No partners match.</td></tr>';
 
   // Update active partner filter indicator
   const pfEl=document.getElementById('partner-filter-active');
@@ -1113,7 +1120,7 @@ function renderGeo(){
   destroyChart('chart-countries');
   CHARTS['chart-countries']=new Chart(document.getElementById('chart-countries'),{
     type:'bar',
-    data:{labels:top25.map(([c])=>(CC_NORM[c]||c)+' '+c),datasets:[{data:top25.map(([,n])=>n),backgroundColor:'rgba(37,99,171,.72)',borderRadius:3}]},
+    data:{labels:top25.map(([c])=>CC_NORM[c]||c),datasets:[{data:top25.map(([,n])=>n),backgroundColor:'rgba(37,99,171,.72)',borderRadius:3}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}
   });
 
@@ -1334,13 +1341,12 @@ function bindEvents(){
     document.getElementById('search').value='';
     document.getElementById('sort').value='startDate-desc';
     document.getElementById('partner-region').value='';
-    document.getElementById('partner-q').value='';
     document.getElementById('partner-type').value='';
     document.querySelectorAll('.sidebar input[type=checkbox]').forEach(cb=>cb.checked=false);
     PARTNER_PAGE=0;
     apply();
   });
-  ['partner-q','partner-type'].forEach(id=>{
+  ['partner-type'].forEach(id=>{
     const el=document.getElementById(id);
     el.addEventListener('input',()=>{PARTNER_PAGE=0;renderPartners();});
     el.addEventListener('change',()=>{PARTNER_PAGE=0;renderPartners();});

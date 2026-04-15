@@ -1028,11 +1028,11 @@ let accOpenNodes=new Set();
 // Build EuroSciVoc tree from IT_PROJECTS
 function buildDomainTree(){
   const root={name:'root',children:[],projects:0,orgs:0,depth:0,path:[]};
-  // Use euroSciVoc paths if available, else topic categories as L1
+  const hasAnyScivoc=IT_PROJECTS.some(p=>p.euroSciVoc&&p.euroSciVoc.length>0);
+
   IT_PROJECTS.forEach(p=>{
     const svocs=p.euroSciVoc&&p.euroSciVoc.length?p.euroSciVoc:null;
     if(svocs){
-      // Group by path → one entry per unique path
       const seen=new Set();
       svocs.forEach(sv=>{
         if(!sv.path||seen.has(sv.path)) return;
@@ -1048,8 +1048,8 @@ function buildDomainTree(){
         });
         root.projects++;
       });
-    } else if(p.topics){
-      // Fallback: topic categories as L1 only
+    } else if(!hasAnyScivoc&&p.topics){
+      // Fallback only when NO project has EuroSciVoc at all
       const cats=new Set();
       p.topics.split(';').map(t=>t.trim()).filter(Boolean).forEach(t=>{const c=topicToCat(t);if(c)cats.add(c);});
       cats.forEach(cat=>{

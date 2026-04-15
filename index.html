@@ -142,12 +142,61 @@ button{font-family:'Lato',sans-serif;cursor:pointer}
 .chart-box.tall canvas{max-height:280px !important}
 .chart-box.short canvas{max-height:160px !important}
 
-/* ── DISCIPLINES ── */
-.disc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-.disc-grid .full{grid-column:span 2}
-.domain-list{max-height:240px;overflow-y:auto}
-.domain-item{display:flex;align-items:center;justify-content:space-between;padding:5px 7px;border-radius:4px;cursor:pointer;font-size:.79rem;transition:background .1s}
-.domain-item:hover,.domain-item.on{background:var(--it-pale);color:var(--it)}
+/* ── DISCIPLINES TAB ── */
+.disc-main{display:grid;grid-template-columns:1fr 200px;gap:12px;margin-bottom:0}
+
+/* Accordion */
+.acc-wrap{background:var(--white);border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
+.acc-search-bar{padding:7px 9px;border-bottom:1px solid var(--rule)}
+.acc-search-bar input{width:100%;padding:5px 8px;border:1.5px solid var(--rule);border-radius:var(--r);font-size:.78rem;outline:none;font-family:'Lato',sans-serif}
+.acc-search-bar input:focus{border-color:var(--it-mid)}
+.acc-body{max-height:440px;overflow-y:auto}
+.acc-body::-webkit-scrollbar{width:3px}
+.acc-body::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
+.acc-row{display:flex;align-items:center;transition:background .1s;border-bottom:1px solid var(--rule);min-height:28px}
+.acc-row:hover{background:var(--it-pale)}
+.acc-row.acc-sel{background:#e4f0e8}
+.acc-toggle{flex-shrink:0;width:26px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.6rem;color:var(--ink-xlight);transition:transform .18s;user-select:none}
+.acc-toggle.open{transform:rotate(90deg);color:var(--it)}
+.acc-toggle.leaf{cursor:default;color:transparent}
+.acc-label{flex:1;padding:3px 6px 3px 0;font-size:.77rem;cursor:pointer;line-height:1.3;color:var(--ink-mid);user-select:none}
+.acc-label:hover{color:var(--it)}
+.acc-row.acc-sel .acc-label{font-weight:600}
+.acc-badge{flex-shrink:0;margin-right:7px;font-family:'Fira Code',monospace;font-size:.57rem;background:var(--paper);border:1px solid var(--rule);border-radius:7px;padding:0 5px;color:var(--ink-xlight);white-space:nowrap}
+.acc-children{display:none}
+.acc-children.open{display:block}
+.acc-d1 .acc-toggle{padding-left:4px}
+.acc-d2 .acc-toggle{padding-left:14px}
+.acc-d3 .acc-toggle{padding-left:24px}
+.acc-d4 .acc-toggle{padding-left:34px}
+.acc-d5 .acc-toggle{padding-left:44px}
+
+/* Selection panel */
+.sel-wrap{background:var(--white);border:1px solid var(--rule);border-radius:var(--r);padding:11px;position:sticky;top:var(--header-h)}
+.sel-title{font-family:'Fira Code',monospace;font-size:.59rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-light);margin-bottom:9px;padding-bottom:5px;border-bottom:1px solid var(--rule)}
+.switch-row{display:flex;gap:0;margin-bottom:10px;background:var(--paper);border:1.5px solid var(--rule);border-radius:20px;padding:3px}
+.sw-btn{flex:1;padding:4px 6px;border:none;border-radius:16px;background:transparent;font-size:.71rem;font-weight:700;cursor:pointer;transition:all .15s;color:var(--ink-light);font-family:'Lato',sans-serif}
+.sw-btn.on{background:var(--it);color:#fff}
+.sel-list{display:flex;flex-direction:column;gap:5px;min-height:50px}
+.sel-empty{font-size:.71rem;color:var(--ink-xlight);font-style:italic;text-align:center;padding:12px 0;line-height:1.5}
+.sel-item{display:flex;align-items:flex-start;gap:5px;padding:6px 8px;border-radius:var(--r);border:1px solid}
+.sel-item-body{flex:1;min-width:0}
+.sel-item-name{font-size:.73rem;font-weight:600;line-height:1.3;word-break:break-word}
+.sel-item-path{font-size:.61rem;color:var(--ink-xlight);margin-top:2px;line-height:1.3;word-break:break-word}
+.sel-item-x{cursor:pointer;font-size:.82rem;opacity:.5;flex-shrink:0;margin-top:1px;transition:opacity .1s;line-height:1}
+.sel-item-x:hover{opacity:1}
+.sel-results{margin-top:10px;display:flex;flex-direction:column;gap:5px}
+.sel-result-btn{display:flex;align-items:center;justify-content:space-between;padding:7px 9px;border-radius:var(--r);border:1.5px solid var(--rule);background:var(--paper);cursor:pointer;transition:all .15s;font-size:.74rem;color:var(--ink-mid);text-align:left;font-family:'Lato',sans-serif;width:100%}
+.sel-result-btn:hover{border-color:var(--it);background:var(--it-pale);color:var(--it)}
+.sel-result-btn .rn{font-family:'Fira Code',monospace;font-size:.82rem;font-weight:700;color:var(--it)}
+.sel-result-btn .rarr{font-size:.68rem;opacity:.5}
+.sel-result-btn:hover .rarr{opacity:1}
+.sel-op-label{font-family:'Fira Code',monospace;font-size:.58rem;color:var(--ink-xlight);text-align:center;margin-top:3px}
+
+@media(max-width:800px){
+  .disc-main{grid-template-columns:1fr}
+  .sel-wrap{position:static}
+}
 .partner-search{display:flex;gap:7px;margin-bottom:8px;flex-wrap:wrap}
 .partner-search input,.partner-search select{padding:5px 8px;border:1.5px solid var(--rule);border-radius:var(--r);font-size:.79rem;outline:none;font-family:'Lato',sans-serif}
 .partner-search input:focus,.partner-search select:focus{border-color:var(--it-mid)}
@@ -392,15 +441,32 @@ dl.kv dd{color:var(--ink)}
 
     <!-- TAB 4: DISCIPLINES -->
     <div class="tab-panel" id="tab-disciplines">
-      <div class="disc-grid">
-        <div class="chart-box">
-          <div class="chart-title">Scientific Domains (EuroSciVoc)</div>
-          <canvas id="chart-domains"></canvas>
+      <!-- Accordion + Selection panel -->
+      <div class="disc-main">
+        <!-- Accordion tree -->
+        <div class="acc-wrap">
+          <div class="acc-search-bar">
+            <input type="text" id="acc-search" placeholder="Search competency…" oninput="filterAcc(this.value)">
+          </div>
+          <div class="acc-body" id="acc-body"></div>
         </div>
-        <div class="chart-box">
-          <div class="chart-title">Domains — click to filter projects</div>
-          <div class="domain-list" id="domain-list"></div>
+        <!-- Selection panel -->
+        <div class="sel-wrap">
+          <div class="sel-title">Selected competencies</div>
+          <div class="switch-row">
+            <button class="sw-btn on" id="sw-or"  onclick="setDomOp('OR')">OR</button>
+            <button class="sw-btn"    id="sw-and" onclick="setDomOp('AND')">AND</button>
+          </div>
+          <div class="sel-list" id="sel-list">
+            <div class="sel-empty">Click a competency<br>in the tree<br>(up to 3)</div>
+          </div>
+          <div class="sel-results" id="sel-results"></div>
         </div>
+      </div>
+      <!-- Doughnut chart below -->
+      <div class="chart-box" style="margin-top:12px">
+        <div class="chart-title">Scientific Domains overview (EuroSciVoc)</div>
+        <canvas id="chart-domains"></canvas>
       </div>
     </div>
 
@@ -474,7 +540,7 @@ dl.kv dd{color:var(--ink)}
 const DATA_URL = 'data/inrae_projects.json';
 let ALL=[], IT_PROJECTS=[], FILTERED=[];
 let FILTERS={programme:new Set(),itRole:new Set(),schemeGroup:new Set(),status:new Set(),country:new Set()};
-let SEARCH='',SORT='startDate-desc',DOMAIN_FILTER=null,REGION_FILTER=null,PARTNER_FILTER=null,PARTNER_PAGE=0;
+let SEARCH='',SORT='startDate-desc',DOMAIN_FILTERS=[],DOMAIN_OPERATOR='OR',REGION_FILTER=null,PARTNER_FILTER=null,PARTNER_PAGE=0;
 const PER_PAGE=25;
 let CHARTS={};
 
@@ -650,14 +716,17 @@ function apply(){
         if(!p.partnerCountries.some(c=>regionCodes.includes(c)||regionCodes.includes(CC_NORM[c]||c))) return false;
       }
     }
-    if(DOMAIN_FILTER){
-      // Use the lookup built in renderDisciplines for correct category matching
-      const ids=window._domToIds&&window._domToIds[DOMAIN_FILTER];
-      if(ids&&ids.size>0){if(!ids.has(p.id+'|'+p.programme)) return false;}
-      else{
-        // Fallback: direct match
-        const cats=projectCats(p);
-        if(!cats.includes(DOMAIN_FILTER)) return false;
+    if(DOMAIN_FILTERS.length){
+      const matchDomain=df=>{
+        const ids=window._domToIds&&window._domToIds[df.key];
+        if(ids&&ids.size>0) return ids.has(p.id+'|'+p.programme);
+        // fallback: match by name in projectCats
+        return projectCats(p).some(c=>c===df.name||projectCats(p).includes(df.name));
+      };
+      if(DOMAIN_OPERATOR==='AND'){
+        if(!DOMAIN_FILTERS.every(matchDomain)) return false;
+      } else {
+        if(!DOMAIN_FILTERS.some(matchDomain)) return false;
       }
     }
     if(PARTNER_FILTER){
@@ -754,12 +823,11 @@ function renderActiveFilters(){
     });
   }
 
-  // Domain (disciplines tab)
-  if(DOMAIN_FILTER){
-    addPill(`Discipline: ${DOMAIN_FILTER}`, 'pill-domain',
-      ()=>{DOMAIN_FILTER=null;apply();}
-    );
-  }
+  // Domain filters (disciplines tab)
+  DOMAIN_FILTERS.forEach(df=>addPill(
+    `Discipline: ${df.name}`, 'pill-domain',
+    ()=>{DOMAIN_FILTERS=DOMAIN_FILTERS.filter(x=>x.key!==df.key);renderDisciplines();apply();}
+  ));
 
   // Partner filter
   if(PARTNER_FILTER){
@@ -931,29 +999,79 @@ function projectCats(p, level){
   return [];
 }
 
+// ── ACCORDION STATE ───────────────────────────────────────────────────────
+let accOpenNodes=new Set();
+
+// Build EuroSciVoc tree from IT_PROJECTS
+function buildDomainTree(){
+  const root={name:'root',children:[],projects:0,orgs:0,depth:0,path:[]};
+  // Use euroSciVoc paths if available, else topic categories as L1
+  IT_PROJECTS.forEach(p=>{
+    const svocs=p.euroSciVoc&&p.euroSciVoc.length?p.euroSciVoc:null;
+    if(svocs){
+      // Group by path → one entry per unique path
+      const seen=new Set();
+      svocs.forEach(sv=>{
+        if(!sv.path||seen.has(sv.path)) return;
+        seen.add(sv.path);
+        const parts=[...sv.path.trim('/').split('/').map(x=>x.trim()).filter(Boolean)];
+        if(!parts.length) return;
+        let node=root;
+        parts.forEach((seg,i)=>{
+          let child=node.children.find(c=>c.name===seg);
+          if(!child){child={name:seg,children:[],projects:0,orgs:0,depth:i+1,path:parts.slice(0,i+1)};node.children.push(child);}
+          if(i===parts.length-1) child.projects++;
+          node=child;
+        });
+        root.projects++;
+      });
+    } else if(p.topics){
+      // Fallback: topic categories as L1 only
+      const cats=new Set();
+      p.topics.split(';').map(t=>t.trim()).filter(Boolean).forEach(t=>{const c=topicToCat(t);if(c)cats.add(c);});
+      cats.forEach(cat=>{
+        let child=root.children.find(c=>c.name===cat);
+        if(!child){child={name:cat,children:[],projects:0,orgs:0,depth:1,path:[cat]};root.children.push(child);}
+        child.projects++;
+        root.projects++;
+      });
+    }
+  });
+  // Propagate project counts up
+  function prop(n){n.children.forEach(prop);if(n.children.length)n.projects=n.children.reduce((s,c)=>s+c.projects,n.projects);}
+  prop(root);
+  // Sort children by projects desc at each level
+  function sortNode(n){n.children.sort((a,b)=>b.projects-a.projects);n.children.forEach(sortNode);}
+  sortNode(root);
+  return root;
+}
+
+const L1_COLORS_DOM={};
+const DOM_PAL=['#1a4f8a','#166534','#92600a','#6d28d9','#dc2626','#0891b2','#be185d','#0f766e','#78350f','#374151'];
+
 function renderDisciplines(){
-  const domCount={};
+  // Build lookup domToIds for the filter
   const domToIds={};
   FILTERED.forEach(p=>{
     const cats=projectCats(p);
     const key=p.id+'|'+p.programme;
     cats.forEach(d=>{
-      if(!d) return; // ← ignorer toute clé vide/null résiduelle
-      domCount[d]=(domCount[d]||0)+1;
+      if(!d) return;
       if(!domToIds[d])domToIds[d]=new Set();
       domToIds[d].add(key);
     });
   });
   window._domToIds=domToIds;
 
-  // Filter out any accidental empty keys
-  const domE=Object.entries(domCount)
-    .filter(([k])=>k&&k.trim())     // ← pas de clé vide
-    .sort((a,b)=>b[1]-a[1]).slice(0,12);
-
+  // Doughnut chart (L1 summary)
+  const domCount={};
+  FILTERED.forEach(p=>projectCats(p,'l1').filter(Boolean).forEach(d=>{domCount[d]=(domCount[d]||0)+1;}));
+  const domE=Object.entries(domCount).filter(([k])=>k&&k.trim()).sort((a,b)=>b[1]-a[1]).slice(0,12);
   const PAL=['#1a4f8a','#2563ab','#3b82f6','#60a5fa','#92600a','#6d28d9','#166534','#dc2626','#0891b2','#be185d','#78350f','#0f766e'];
   destroyChart('chart-domains');
   if(domE.length){
+    // Assign colors to L1 domains
+    domE.forEach(([d],i)=>{L1_COLORS_DOM[d]=PAL[i%PAL.length];});
     CHARTS['chart-domains']=new Chart(document.getElementById('chart-domains'),{
       type:'doughnut',
       data:{labels:domE.map(e=>e[0]),datasets:[{data:domE.map(e=>e[1]),backgroundColor:PAL}]},
@@ -961,18 +1079,169 @@ function renderDisciplines(){
         plugins:{legend:{position:'right',labels:{font:{size:9},boxWidth:10}},
         tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw} project${c.raw!==1?'s':''}`}}}}
     });
-    // No warning message — topic categories are perfectly valid
-    document.getElementById('domain-list').innerHTML=domE.map(([d,n])=>`
-      <div class="domain-item ${DOMAIN_FILTER===d?'on':''}" onclick="toggleDomain('${d}')">
-        <span>${d}</span><span class="cc">${n}</span>
-      </div>`).join('')+(DOMAIN_FILTER?`<div class="domain-item" onclick="toggleDomain(null)" style="color:var(--red);margin-top:4px">✕ Clear filter</div>`:'');
-  } else {
-    document.getElementById('domain-list').innerHTML='<div style="color:var(--ink-light);font-size:.78rem;padding:6px">No domain data available.</div>';
   }
-  // renderPartners is now called from renderAll independently
+
+  // Render accordion
+  renderAcc(document.getElementById('acc-search')?.value||'');
+  renderSelPanel();
 }
 
-function toggleDomain(d){DOMAIN_FILTER=(DOMAIN_FILTER===d)?null:d;apply();}
+// ── ACCORDION RENDER ──────────────────────────────────────────────────────
+let _domTree=null;
+function getDomTree(){if(!_domTree)_domTree=buildDomainTree();return _domTree;}
+
+function filterAcc(q){renderAcc(q);}
+
+function renderAcc(q=''){
+  const body=document.getElementById('acc-body');
+  if(!body) return;
+  const sq=q.toLowerCase().trim();
+  const tree=getDomTree();
+
+  function matches(node){
+    if(!sq) return true;
+    if(node.name.toLowerCase().includes(sq)) return true;
+    return node.children.some(matches);
+  }
+
+  function renderNode(node,container){
+    if(!matches(node)) return;
+    const hasC=node.children.length>0;
+    const key=node.path.join('|||');
+    const isOpen=accOpenNodes.has(key)||!!sq;
+    const isSel=DOMAIN_FILTERS.some(df=>df.key===key);
+    const l1=node.path[0]||node.name;
+    const col=L1_COLORS_DOM[l1]||DOM_PAL[0];
+
+    const row=document.createElement('div');
+    row.className='acc-row acc-d'+node.depth+(isSel?' acc-sel':'');
+
+    // Toggle
+    const tog=document.createElement('div');
+    tog.className='acc-toggle'+(hasC?(isOpen?' open':''):' leaf');
+    tog.textContent=hasC?'▶':'';
+    if(hasC) tog.onclick=e=>{
+      e.stopPropagation();
+      accOpenNodes.has(key)?accOpenNodes.delete(key):accOpenNodes.add(key);
+      renderAcc(document.getElementById('acc-search')?.value||'');
+    };
+
+    // Label
+    const lbl=document.createElement('div');
+    lbl.className='acc-label';
+    if(sq&&node.name.toLowerCase().includes(sq)){
+      const i=node.name.toLowerCase().indexOf(sq);
+      lbl.innerHTML=node.name.slice(0,i)+`<mark style="background:#fef08a;border-radius:2px">${node.name.slice(i,i+sq.length)}</mark>`+node.name.slice(i+sq.length);
+    } else {
+      lbl.textContent=node.name;
+    }
+    if(isSel) lbl.style.color=col;
+    lbl.onclick=()=>toggleDomSel({key,name:node.name,path:node.path,col,projects:node.projects,orgs:node.orgs||0});
+    lbl.title=isSel?'Click to deselect':'Click to add to filter (up to 3)';
+
+    // Badge
+    const badge=document.createElement('span');
+    badge.className='acc-badge';
+    badge.textContent=node.projects+'p';
+
+    row.appendChild(tog);row.appendChild(lbl);row.appendChild(badge);
+    container.appendChild(row);
+
+    if(hasC){
+      const childWrap=document.createElement('div');
+      childWrap.className='acc-children'+(isOpen?' open':'');
+      node.children.forEach(c=>renderNode(c,childWrap));
+      container.appendChild(childWrap);
+    }
+  }
+
+  body.innerHTML='';
+  tree.children.forEach(c=>renderNode(c,body));
+  if(!body.children.length){
+    body.innerHTML='<div style="padding:12px;font-size:.78rem;color:var(--ink-light)">No competencies found.</div>';
+  }
+}
+
+// ── SELECTION LOGIC ───────────────────────────────────────────────────────
+function toggleDomSel(df){
+  const idx=DOMAIN_FILTERS.findIndex(x=>x.key===df.key);
+  if(idx>=0){
+    DOMAIN_FILTERS.splice(idx,1);
+  } else {
+    if(DOMAIN_FILTERS.length>=3) DOMAIN_FILTERS.shift();
+    DOMAIN_FILTERS.push(df);
+  }
+  renderAcc(document.getElementById('acc-search')?.value||'');
+  renderSelPanel();
+  apply();
+}
+
+function setDomOp(op){
+  DOMAIN_OPERATOR=op;
+  document.getElementById('sw-or').classList.toggle('on',op==='OR');
+  document.getElementById('sw-and').classList.toggle('on',op==='AND');
+  apply();
+}
+
+function renderSelPanel(){
+  const list=document.getElementById('sel-list');
+  const results=document.getElementById('sel-results');
+  if(!list||!results) return;
+
+  if(!DOMAIN_FILTERS.length){
+    list.innerHTML='<div class="sel-empty">Click a competency<br>in the tree<br>(up to 3)</div>';
+    results.innerHTML='';
+    return;
+  }
+
+  list.innerHTML=DOMAIN_FILTERS.map(df=>{
+    const col=df.col||'var(--it)';
+    const parentPath=df.path&&df.path.length>1?df.path.slice(0,-1).join(' › '):'';
+    const safeKey=df.key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="sel-item" style="border-color:${col}44;background:${col}0d">
+      <div class="sel-item-body">
+        <div class="sel-item-name" style="color:${col}">${df.name}</div>
+        ${parentPath?`<div class="sel-item-path">${parentPath}</div>`:''}
+      </div>
+      <span class="sel-item-x" onclick="removeDomFilter('${safeKey}')">✕</span>
+    </div>`;
+  }).join('');
+
+  // Result counts from FILTERED (already updated by apply())
+  const projCount=FILTERED.length;
+  // Org count: unique orgs in FILTERED projects
+  const orgSet=new Set();
+  FILTERED.forEach(p=>(p.partners||[]).forEach(o=>{if(o.name)orgSet.add(o.name+'||'+(o.country||''));}));
+  const orgCount=orgSet.size;
+
+  results.innerHTML=`
+    <button class="sel-result-btn" onclick="goToTabDisc('projects')" title="Switch to Projects tab">
+      <span><span class="rn">${projCount}</span> project${projCount!==1?'s':''}</span>
+      <span class="rarr">Projects ↗</span>
+    </button>
+    <button class="sel-result-btn" onclick="goToTabDisc('partners')" title="Switch to Partners tab">
+      <span><span class="rn">${orgCount}</span> organisation${orgCount!==1?'s':''}</span>
+      <span class="rarr">Partners ↗</span>
+    </button>
+    <div class="sel-op-label">${DOMAIN_OPERATOR} · ${DOMAIN_FILTERS.length} competenc${DOMAIN_FILTERS.length>1?'ies':'y'}</div>`;
+}
+
+function removeDomFilter(key){
+  DOMAIN_FILTERS=DOMAIN_FILTERS.filter(x=>x.key!==key);
+  renderAcc(document.getElementById('acc-search')?.value||'');
+  renderSelPanel();
+  apply();
+}
+
+function goToTabDisc(tab){
+  // Switch to the target tab
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('on'));
+  const btn=document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+  if(btn){btn.classList.add('on');const sortBlock=document.getElementById('sort-block');if(sortBlock)sortBlock.style.display=(tab==='projects'||tab==='partners')?'':'none';}
+  document.getElementById('tab-'+tab).classList.add('on');
+  // Filter is already applied
+}
 function toggleRegion(r){
   REGION_FILTER=(REGION_FILTER===r)?null:r;
   // Sync the partner-region dropdown in the Disciplines tab
@@ -1335,7 +1604,7 @@ function bindEvents(){
     apply();
   });
   document.getElementById('btn-reset').addEventListener('click',()=>{
-    SEARCH='';SORT='startDate-desc';DOMAIN_FILTER=null;REGION_FILTER=null;PARTNER_FILTER=null;
+    SEARCH='';SORT='startDate-desc';DOMAIN_FILTERS=[];DOMAIN_OPERATOR='OR';REGION_FILTER=null;PARTNER_FILTER=null;
     Object.values(FILTERS).forEach(s=>s.clear());
     document.getElementById('search').value='';
     document.getElementById('sort').value='startDate-desc';

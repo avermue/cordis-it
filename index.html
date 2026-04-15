@@ -153,23 +153,25 @@ button{font-family:'Lato',sans-serif;cursor:pointer}
 .acc-body{max-height:440px;overflow-y:auto}
 .acc-body::-webkit-scrollbar{width:3px}
 .acc-body::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
-.acc-row{display:flex;align-items:center;transition:background .1s;border-bottom:1px solid var(--rule);min-height:28px}
+.acc-row{display:flex;align-items:center;transition:background .1s;border-bottom:1px solid var(--rule);min-height:32px}
 .acc-row:hover{background:var(--it-pale)}
 .acc-row.acc-sel{background:#e4f0e8}
-.acc-toggle{flex-shrink:0;width:26px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.6rem;color:var(--ink-xlight);transition:transform .18s;user-select:none}
+/* Toggle: taille confortable + rotation au clic */
+.acc-toggle{flex-shrink:0;width:20px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.72rem;color:var(--ink-xlight);transition:transform .18s;user-select:none}
 .acc-toggle.open{transform:rotate(90deg);color:var(--it)}
-.acc-toggle.leaf{cursor:default;color:transparent}
-.acc-label{flex:1;padding:3px 6px 3px 0;font-size:.77rem;cursor:pointer;line-height:1.3;color:var(--ink-mid);user-select:none}
+.acc-toggle.leaf{cursor:default;color:transparent;width:8px}
+.acc-label{flex:1;padding:4px 6px 4px 0;font-size:.78rem;cursor:pointer;line-height:1.3;color:var(--ink-mid);user-select:none}
 .acc-label:hover{color:var(--it)}
 .acc-row.acc-sel .acc-label{font-weight:600}
 .acc-badge{flex-shrink:0;margin-right:7px;font-family:'Fira Code',monospace;font-size:.57rem;background:var(--paper);border:1px solid var(--rule);border-radius:7px;padding:0 5px;color:var(--ink-xlight);white-space:nowrap}
 .acc-children{display:none}
 .acc-children.open{display:block}
-.acc-d1 .acc-toggle{padding-left:4px}
-.acc-d2 .acc-toggle{padding-left:14px}
-.acc-d3 .acc-toggle{padding-left:24px}
-.acc-d4 .acc-toggle{padding-left:34px}
-.acc-d5 .acc-toggle{padding-left:44px}
+/* Indentation : padding-left sur toute la row selon la profondeur */
+.acc-row.acc-d1{padding-left:0px}
+.acc-row.acc-d2{padding-left:14px}
+.acc-row.acc-d3{padding-left:26px}
+.acc-row.acc-d4{padding-left:38px}
+.acc-row.acc-d5{padding-left:50px}
 
 /* Selection panel */
 .sel-wrap{background:var(--white);border:1px solid var(--rule);border-radius:var(--r);padding:11px;position:sticky;top:var(--header-h)}
@@ -717,11 +719,23 @@ function apply(){
       }
     }
     if(DOMAIN_FILTERS.length){
+      // For each filter, collect all project ids from the node AND all its descendants
+      const getDescendantIds=df=>{
+        if(window._domDescendants&&window._domDescendants[df.key])
+          return window._domDescendants[df.key];
+        return null;
+      };
       const matchDomain=df=>{
-        const ids=window._domToIds&&window._domToIds[df.key];
+        // Try descendant ids first (precomputed in renderDisciplines)
+        const ids=getDescendantIds(df);
         if(ids&&ids.size>0) return ids.has(p.id+'|'+p.programme);
-        // fallback: match by name in projectCats
-        return projectCats(p).some(c=>c===df.name||projectCats(p).includes(df.name));
+        // Fallback: check if any of the project's categories starts with or equals the filter name
+        const pkey=p.id+'|'+p.programme;
+        // Check domToIds for exact match
+        const exactIds=window._domToIds&&window._domToIds[df.name];
+        if(exactIds&&exactIds.size>0) return exactIds.has(pkey);
+        // Last resort: projectCats prefix match
+        return projectCats(p).some(c=>c===df.name);
       };
       if(DOMAIN_OPERATOR==='AND'){
         if(!DOMAIN_FILTERS.every(matchDomain)) return false;
@@ -1050,18 +1064,52 @@ const L1_COLORS_DOM={};
 const DOM_PAL=['#1a4f8a','#166534','#92600a','#6d28d9','#dc2626','#0891b2','#be185d','#0f766e','#78350f','#374151'];
 
 function renderDisciplines(){
-  // Build lookup domToIds for the filter
+  // Build lookup domToIds for the filter (exact match by category name)
   const domToIds={};
   FILTERED.forEach(p=>{
     const cats=projectCats(p);
-    const key=p.id+'|'+p.programme;
+    const pkey=p.id+'|'+p.programme;
     cats.forEach(d=>{
       if(!d) return;
       if(!domToIds[d])domToIds[d]=new Set();
-      domToIds[d].add(key);
+      domToIds[d].add(pkey);
     });
   });
   window._domToIds=domToIds;
+
+  // Build _domDescendants: for each node key, collect ALL project ids
+  // from that node AND all its descendants (for parent-node filtering)
+  const domDescendants={};
+  function collectIds(node){
+    const key=node.path.join('|||');
+    if(!domDescendants[key]) domDescendants[key]=new Set();
+    // Direct match: any project whose categories include this node's name
+    FILTERED.forEach(p=>{
+      const pkey=p.id+'|'+p.programme;
+      const cats=projectCats(p);
+      // Match if any category equals or starts with this node's path segment
+      if(cats.some(c=>c===node.name)){
+        domDescendants[key].add(pkey);
+      }
+      // Also match by EuroSciVoc path prefix
+      (p.euroSciVoc||[]).forEach(sv=>{
+        if(sv.path&&sv.path.includes('/'+node.name+'/')||
+           sv.path&&sv.path.endsWith('/'+node.name)||
+           sv.path&&sv.path===node.path.map(x=>'/'+x).join('')){
+          domDescendants[key].add(pkey);
+        }
+      });
+    });
+    // Recurse into children and merge their ids up
+    node.children.forEach(c=>{
+      collectIds(c);
+      const ckey=c.path.join('|||');
+      (domDescendants[ckey]||new Set()).forEach(id=>domDescendants[key].add(id));
+    });
+  }
+  const tree=getDomTree();
+  tree.children.forEach(c=>collectIds(c));
+  window._domDescendants=domDescendants;
 
   // Doughnut chart (L1 summary)
   const domCount={};

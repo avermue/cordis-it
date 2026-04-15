@@ -979,21 +979,30 @@ function renderBudget(){
 /* ── TAB 3: DISCIPLINES & PARTNERS ── */
 
 // Topic code → thematic category
+// Topic code → thematic category (exact match on dash-separated parts only)
 const TOPIC_CATS={
-  'CL1':'Health','CL2':'Culture & Society','CL3':'Civil Security',
-  'CL4':'Digital & Industry','CL5':'Climate, Energy & Mobility',
-  'CL6':'Food, Bioeconomy & Environment','MISS':'EU Missions',
-  'INFRA':'Research Infrastructures','MSCA':'MSCA','ERC':'ERC',
-  'EIC':'EIC','JU':'Joint Undertakings','BBI':'Biobased Industries JU',
-  'IMI':'Health JU','FCH':'Hydrogen JU','SESAR':'Aviation JU',
-  'SFS':'Food Security','KBBE':'Bioeconomy'
+  'CL1':'Health',
+  'CL2':'Culture & Society',
+  'CL3':'Civil Security',
+  'CL4':'Digital & Industry',
+  'CL5':'Climate, Energy & Mobility',
+  'CL6':'Food, Bioeconomy & Environment',
+  'MISS':'EU Missions',
+  'INFRA':'Research Infrastructures',
+  'MSCA':'MSCA',
+  'ERC':'ERC',
+  'EIC':'EIC',
+  'JU':'Joint Undertakings',
+  'CBE':'Biobased Industries JU',  // replaces BBI
+  'SFS':'Food Security',
 };
 function topicToCat(topic){
-  if(!topic||!topic.trim()) return null; // ← garde-fou clé vide
+  if(!topic||!topic.trim()) return null;
   const t=topic.trim().toUpperCase();
   const parts=t.split('-');
+  // Match exact sur chaque partie du code CORDIS (ex: CL6, MSCA, SESAR)
   for(const p of parts){if(TOPIC_CATS[p])return TOPIC_CATS[p];}
-  for(const[k,v] of Object.entries(TOPIC_CATS))if(t.includes(k))return v;
+  // Pas de substring libre — évite les faux positifs
   return 'Other';
 }
 function projectCats(p, level){
@@ -1136,7 +1145,12 @@ function renderDisciplines(){
 
 // ── ACCORDION RENDER ──────────────────────────────────────────────────────
 let _domTree=null;
-function getDomTree(){if(!_domTree)_domTree=buildDomainTree();return _domTree;}
+function getDomTree(){
+  // Build once per session (based on all IT_PROJECTS, not FILTERED)
+  // Reset if IT_PROJECTS changes (e.g. after data reload)
+  if(!_domTree) _domTree=buildDomainTree();
+  return _domTree;
+}
 
 function filterAcc(q){renderAcc(q);}
 

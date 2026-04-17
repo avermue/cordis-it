@@ -147,26 +147,35 @@ button{font-family:'Lato',sans-serif;cursor:pointer}
 
 /* Accordion */
 .acc-wrap{background:var(--white);border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
-.acc-search-bar{padding:7px 9px;border-bottom:1px solid var(--rule)}
-.acc-search-bar input{width:100%;padding:5px 8px;border:1.5px solid var(--rule);border-radius:var(--r);font-size:.78rem;outline:none;font-family:'Lato',sans-serif}
-.acc-search-bar input:focus{border-color:var(--it-mid)}
+/* All disciplines row */
+.acc-all-row{display:flex;align-items:center;padding:8px 10px;border-bottom:2px solid var(--rule);cursor:pointer;background:var(--paper);transition:background .1s}
+.acc-all-row:hover{background:var(--it-pale)}
+.acc-all-label{font-size:.8rem;font-weight:700;color:var(--it);font-family:'Lato',sans-serif}
 .acc-body{max-height:440px;overflow-y:auto}
 .acc-body::-webkit-scrollbar{width:3px}
 .acc-body::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
 .acc-row{display:flex;align-items:center;transition:background .1s;border-bottom:1px solid var(--rule);min-height:32px}
 .acc-row:hover{background:var(--it-pale)}
 .acc-row.acc-sel{background:#e4f0e8}
-/* Toggle: taille confortable + rotation au clic */
-.acc-toggle{flex-shrink:0;width:20px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.72rem;color:var(--ink-xlight);transition:transform .18s;user-select:none}
-.acc-toggle.open{transform:rotate(90deg);color:var(--it)}
-.acc-toggle.leaf{cursor:default;color:transparent;width:8px}
-.acc-label{flex:1;padding:4px 6px 4px 0;font-size:.78rem;cursor:pointer;line-height:1.3;color:var(--ink-mid);user-select:none}
-.acc-label:hover{color:var(--it)}
-.acc-row.acc-sel .acc-label{font-weight:600}
+/* Open / Select buttons (replace toggle + label) */
+.acc-btn{
+  flex-shrink:0;padding:2px 6px;border-radius:4px;border:1px solid var(--rule);
+  font-family:'Fira Code',monospace;font-size:.58rem;cursor:pointer;
+  transition:all .15s;background:var(--paper);color:var(--ink-xlight);
+  white-space:nowrap;margin:0 2px;user-select:none;
+}
+.acc-btn-open{border-color:var(--it-light);color:var(--it-light)}
+.acc-btn-open:hover,.acc-btn-open.on{background:var(--it);color:#fff;border-color:var(--it)}
+.acc-btn-sel{border-color:#6d28d9;color:#6d28d9;opacity:.7}
+.acc-btn-sel:hover,.acc-btn-sel.on{background:#6d28d9;color:#fff;border-color:#6d28d9;opacity:1}
+/* Spacer for leaf nodes (no open button) */
+.acc-btn-spacer{flex-shrink:0;width:38px;margin:0 2px}
+.acc-label{flex:1;padding:4px 6px;font-size:.78rem;line-height:1.3;color:var(--ink-mid)}
+.acc-row.acc-sel .acc-label{font-weight:600;color:var(--green)}
 .acc-badge{flex-shrink:0;margin-right:7px;font-family:'Fira Code',monospace;font-size:.57rem;background:var(--paper);border:1px solid var(--rule);border-radius:7px;padding:0 5px;color:var(--ink-xlight);white-space:nowrap}
 .acc-children{display:none}
 .acc-children.open{display:block}
-/* Indentation : padding-left sur toute la row selon la profondeur */
+/* Indentation */
 .acc-row.acc-d1{padding-left:0px}
 .acc-row.acc-d2{padding-left:14px}
 .acc-row.acc-d3{padding-left:26px}
@@ -447,27 +456,28 @@ dl.kv dd{color:var(--ink)}
       <div class="disc-main">
         <!-- Accordion tree -->
         <div class="acc-wrap">
-          <div class="acc-search-bar">
-            <input type="text" id="acc-search" placeholder="Search competency…" oninput="filterAcc(this.value)">
+          <!-- All Disciplines reset button -->
+          <div class="acc-all-row" onclick="resetDomainFilter()">
+            <span class="acc-all-label">All disciplines</span>
           </div>
           <div class="acc-body" id="acc-body"></div>
         </div>
         <!-- Selection panel -->
         <div class="sel-wrap">
-          <div class="sel-title">Selected competencies</div>
+          <div class="sel-title">Selected disciplines</div>
           <div class="switch-row">
             <button class="sw-btn on" id="sw-or"  onclick="setDomOp('OR')">OR</button>
             <button class="sw-btn"    id="sw-and" onclick="setDomOp('AND')">AND</button>
           </div>
           <div class="sel-list" id="sel-list">
-            <div class="sel-empty">Click a competency<br>in the tree<br>(up to 3)</div>
+            <div class="sel-empty">Click "select" on a discipline<br>in the tree<br>(up to 3)</div>
           </div>
           <div class="sel-results" id="sel-results"></div>
         </div>
       </div>
       <!-- Doughnut chart below -->
       <div class="chart-box" style="margin-top:12px">
-        <div class="chart-title">Scientific Domains overview (EuroSciVoc)</div>
+        <div class="chart-title">Scientific Disciplines overview (EuroSciVoc)</div>
         <canvas id="chart-domains"></canvas>
       </div>
     </div>
@@ -1128,11 +1138,18 @@ function renderDisciplines(){
   destroyChart('chart-domains');
   if(domE.length){
     domE.forEach(([d],i)=>{L1_COLORS_DOM[d]=DONUT_PAL[i%DONUT_PAL.length];});
-    renderDonutChart(domE, null);
+    // Always rebuild from current FILTERED data, respecting current drill state
+    if(_donutDrillNode){
+      // Re-compute entries for current drill node from fresh FILTERED data
+      const freshEntries=_donutDrillNode.children.map(c=>[c.name,c.projects]);
+      renderDonutChart(freshEntries.length?freshEntries:domE, freshEntries.length?_donutDrillNode:null);
+    } else {
+      renderDonutChart(domE, null);
+    }
   }
 
   // Render accordion
-  renderAcc(document.getElementById('acc-search')?.value||'');
+  renderAcc();
   renderSelPanel();
 }
 
@@ -1171,7 +1188,7 @@ function renderDonutChart(entries, drillNode){
       plugins:{
         legend:{
           position:'right',
-          labels:{font:{size:9},boxWidth:10,padding:8,
+          labels:{font:{size:11},boxWidth:12,padding:10,
             // Show count in legend
             generateLabels:chart=>{
               return chart.data.labels.map((label,i)=>({
@@ -1219,7 +1236,8 @@ function filterAcc(q){renderAcc(q);}
 function renderAcc(q=''){
   const body=document.getElementById('acc-body');
   if(!body) return;
-  const sq=q.toLowerCase().trim();
+  // Use global SEARCH if no local query provided
+  const sq=(q||SEARCH).toLowerCase().trim();
   const tree=getDomTree();
 
   function matches(node){
@@ -1240,38 +1258,54 @@ function renderAcc(q=''){
     const row=document.createElement('div');
     row.className='acc-row acc-d'+node.depth+(isSel?' acc-sel':'');
 
-    // Toggle
-    const tog=document.createElement('div');
-    tog.className='acc-toggle'+(hasC?(isOpen?' open':''):' leaf');
-    tog.textContent=hasC?'▶':'';
-    if(hasC) tog.onclick=e=>{
-      e.stopPropagation();
-      accOpenNodes.has(key)?accOpenNodes.delete(key):accOpenNodes.add(key);
-      renderAcc(document.getElementById('acc-search')?.value||'');
-    };
+    // OPEN button (only for nodes with children)
+    if(hasC){
+      const btnOpen=document.createElement('button');
+      btnOpen.className='acc-btn acc-btn-open'+(isOpen?' on':'');
+      btnOpen.textContent='open';
+      btnOpen.onclick=e=>{
+        e.stopPropagation();
+        accOpenNodes.has(key)?accOpenNodes.delete(key):accOpenNodes.add(key);
+        renderAcc();
+        drillDonut(node);
+      };
+      row.appendChild(btnOpen);
+    } else {
+      // Spacer to keep label aligned for leaves
+      const sp=document.createElement('span');
+      sp.className='acc-btn-spacer';
+      row.appendChild(sp);
+    }
 
-    // Label
+    // SELECT button
+    const btnSel=document.createElement('button');
+    btnSel.className='acc-btn acc-btn-sel'+(isSel?' on':'');
+    btnSel.textContent='select';
+    btnSel.onclick=e=>{
+      e.stopPropagation();
+      toggleDomSel({key,name:node.name,path:node.path,col,projects:node.projects,orgs:node.orgs||0});
+      drillDonut(node);
+    };
+    row.appendChild(btnSel);
+
+    // Label (text only, not clickable)
     const lbl=document.createElement('div');
     lbl.className='acc-label';
+    if(isSel) lbl.style.color=col;
     if(sq&&node.name.toLowerCase().includes(sq)){
       const i=node.name.toLowerCase().indexOf(sq);
       lbl.innerHTML=node.name.slice(0,i)+`<mark style="background:#fef08a;border-radius:2px">${node.name.slice(i,i+sq.length)}</mark>`+node.name.slice(i+sq.length);
     } else {
       lbl.textContent=node.name;
     }
-    if(isSel) lbl.style.color=col;
-    lbl.onclick=()=>{
-      toggleDomSel({key,name:node.name,path:node.path,col,projects:node.projects,orgs:node.orgs||0});
-      drillDonut(node);
-    };
-    lbl.title=isSel?'Click to deselect · updates chart':'Click to filter · updates chart';
+    row.appendChild(lbl);
 
-    // Badge
+    // Badge (project count)
     const badge=document.createElement('span');
     badge.className='acc-badge';
     badge.textContent=node.projects+'p';
+    row.appendChild(badge);
 
-    row.appendChild(tog);row.appendChild(lbl);row.appendChild(badge);
     container.appendChild(row);
 
     if(hasC){
@@ -1285,11 +1319,21 @@ function renderAcc(q=''){
   body.innerHTML='';
   tree.children.forEach(c=>renderNode(c,body));
   if(!body.children.length){
-    body.innerHTML='<div style="padding:12px;font-size:.78rem;color:var(--ink-light)">No competencies found.</div>';
+    body.innerHTML='<div style="padding:12px;font-size:.78rem;color:var(--ink-light)">No disciplines found.</div>';
   }
 }
 
 // ── SELECTION LOGIC ───────────────────────────────────────────────────────
+function resetDomainFilter(){
+  DOMAIN_FILTERS=[];
+  _donutDrillNode=null;
+  const tree=getDomTree();
+  const rootEntries=tree.children.map(c=>[c.name,c.projects]);
+  renderDonutChart(rootEntries, null);
+  renderAcc();
+  renderSelPanel();
+  apply();
+}
 function toggleDomSel(df){
   const idx=DOMAIN_FILTERS.findIndex(x=>x.key===df.key);
   if(idx>=0){
@@ -1298,7 +1342,7 @@ function toggleDomSel(df){
     if(DOMAIN_FILTERS.length>=3) DOMAIN_FILTERS.shift();
     DOMAIN_FILTERS.push(df);
   }
-  renderAcc(document.getElementById('acc-search')?.value||'');
+  renderAcc();
   renderSelPanel();
   apply();
 }
@@ -1316,7 +1360,7 @@ function renderSelPanel(){
   if(!list||!results) return;
 
   if(!DOMAIN_FILTERS.length){
-    list.innerHTML='<div class="sel-empty">Click a competency<br>in the tree<br>(up to 3)</div>';
+    list.innerHTML='<div class="sel-empty">Click a discipline<br>in the tree<br>(up to 3)</div>';
     results.innerHTML='';
     return;
   }
@@ -1350,12 +1394,12 @@ function renderSelPanel(){
       <span><span class="rn">${orgCount}</span> organisation${orgCount!==1?'s':''}</span>
       <span class="rarr">Partners ↗</span>
     </button>
-    <div class="sel-op-label">${DOMAIN_OPERATOR} · ${DOMAIN_FILTERS.length} competenc${DOMAIN_FILTERS.length>1?'ies':'y'}</div>`;
+    <div class="sel-op-label">${DOMAIN_OPERATOR} · ${DOMAIN_FILTERS.length} discipline${DOMAIN_FILTERS.length>1?'s':''}</div>`;
 }
 
 function removeDomFilter(key){
   DOMAIN_FILTERS=DOMAIN_FILTERS.filter(x=>x.key!==key);
-  renderAcc(document.getElementById('acc-search')?.value||'');
+  renderAcc();
   renderSelPanel();
   apply();
 }

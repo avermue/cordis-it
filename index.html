@@ -1350,7 +1350,7 @@ function setDomOp(op){
   DOMAIN_OPERATOR=op;
   document.getElementById('sw-or').classList.toggle('on',op==='OR');
   document.getElementById('sw-and').classList.toggle('on',op==='AND');
-  apply();
+  apply(); // renderAll → renderDisciplines → renderSelPanel with fresh counts
 }
 
 function renderSelPanel(){
@@ -1377,11 +1377,27 @@ function renderSelPanel(){
     </div>`;
   }).join('');
 
-  // Result counts from FILTERED (already updated by apply())
-  const projCount=FILTERED.length;
-  // Org count: unique orgs in FILTERED projects
+  // Calculate counts directly from IT_PROJECTS applying ONLY discipline filters
+  // (independent of other active filters, so counts are always correct)
+  function matchesDisciplines(p){
+    if(!DOMAIN_FILTERS.length) return true;
+    const matchOne=df=>{
+      const ids=window._domDescendants&&window._domDescendants[df.key];
+      if(ids&&ids.size>0) return ids.has(p.id+'|'+p.programme);
+      return (p.domains||[]).some(d=>d===df.name)||
+             (p.domains_l2||[]).some(d=>d===df.name);
+    };
+    return DOMAIN_OPERATOR==='AND'
+      ? DOMAIN_FILTERS.every(matchOne)
+      : DOMAIN_FILTERS.some(matchOne);
+  }
+
+  const matchingProjects=IT_PROJECTS.filter(matchesDisciplines);
+  const projCount=matchingProjects.length;
   const orgSet=new Set();
-  FILTERED.forEach(p=>(p.partners||[]).forEach(o=>{if(o.name)orgSet.add(o.name+'||'+(o.country||''));}));
+  matchingProjects.forEach(p=>(p.partners||[]).forEach(o=>{
+    if(o.name) orgSet.add(o.name+'||'+(o.country||''));
+  }));
   const orgCount=orgSet.size;
 
   results.innerHTML=`
@@ -1398,9 +1414,8 @@ function renderSelPanel(){
 
 function removeDomFilter(key){
   DOMAIN_FILTERS=DOMAIN_FILTERS.filter(x=>x.key!==key);
-  renderAcc();
-  renderSelPanel();
   apply();
+  renderAcc();
 }
 
 function goToTabDisc(tab){

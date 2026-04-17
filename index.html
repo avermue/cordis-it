@@ -1586,15 +1586,14 @@ function clearPartnerFilter(){PARTNER_FILTER=null;apply();}
 function setPartnerPage(p){PARTNER_PAGE=p;renderPartners();}
 
 /* ── TAB 4: GEOGRAPHY ── */
-function renderGeo(){
+async function renderGeo(){
   const cc={};
   FILTERED.forEach(p=>p.partnerCountries.forEach(c=>{cc[c]=(cc[c]||0)+1;}));
   const sorted=Object.entries(cc).sort((a,b)=>b[1]-a[1]);
   const top25=sorted.slice(0,25);
   const maxCount=sorted.length?sorted[0][1]:1;
 
-  // ── Choropleth SVG map ──────────────────────────────────────────────────
-  renderChoropleth(cc, maxCount);
+  await renderChoropleth(cc, maxCount);
 
   // ── Bar chart top 25 with flag images ──────────────────────────────────
   destroyChart('chart-countries');
@@ -1704,88 +1703,101 @@ function renderGeo(){
   });
 }
 
-// ── Choropleth map ──────────────────────────────────────────────────────────
-// Simplified country outlines as SVG paths (approximate, Europe-focused)
-const GEO_PATHS={
-  FR:`M 310 185 L 330 175 L 355 180 L 365 195 L 360 215 L 340 230 L 315 225 L 300 210 Z`,
-  ES:`M 245 220 L 310 210 L 320 230 L 305 255 L 270 265 L 240 255 L 230 235 Z`,
-  PT:`M 225 225 L 245 220 L 240 255 L 220 260 L 215 245 Z`,
-  DE:`M 355 140 L 390 135 L 405 150 L 400 175 L 375 185 L 355 180 L 345 165 Z`,
-  NL:`M 340 130 L 360 125 L 365 145 L 345 148 Z`,
-  BE:`M 340 150 L 365 145 L 368 160 L 345 163 Z`,
-  CH:`M 355 185 L 378 182 L 380 198 L 358 200 Z`,
-  AT:`M 380 178 L 415 175 L 418 190 L 382 192 Z`,
-  IT:`M 365 210 L 385 205 L 400 230 L 405 265 L 395 290 L 380 295 L 370 275 L 368 250 L 360 230 Z`,
-  UK:`M 295 115 L 320 110 L 325 135 L 315 150 L 295 145 L 285 130 Z`,
-  IE:`M 268 120 L 285 115 L 285 140 L 268 145 Z`,
-  DK:`M 360 108 L 375 105 L 378 125 L 365 128 Z`,
-  SE:`M 375 60 L 395 55 L 405 100 L 395 130 L 378 125 L 370 90 Z`,
-  NO:`M 345 55 L 375 45 L 378 75 L 370 90 L 345 85 Z`,
-  FI:`M 400 40 L 430 35 L 440 80 L 420 100 L 400 90 L 395 65 Z`,
-  PL:`M 400 145 L 440 140 L 445 170 L 415 178 L 395 172 Z`,
-  CZ:`M 392 168 L 418 165 L 420 178 L 395 182 Z`,
-  SK:`M 420 170 L 445 168 L 447 180 L 422 182 Z`,
-  HU:`M 415 180 L 448 178 L 452 195 L 420 198 Z`,
-  RO:`M 445 175 L 485 170 L 490 200 L 460 210 L 440 200 Z`,
-  BG:`M 445 205 L 480 200 L 482 218 L 448 220 Z`,
-  GR:`M 418 235 L 445 228 L 450 255 L 435 270 L 418 260 Z`,
-  EL:`M 418 235 L 445 228 L 450 255 L 435 270 L 418 260 Z`,
-  HR:`M 390 198 L 415 195 L 418 215 L 400 225 L 388 212 Z`,
-  SI:`M 382 192 L 395 190 L 397 200 L 383 202 Z`,
-  RS:`M 420 200 L 445 197 L 447 218 L 422 220 Z`,
-  LU:`M 360 158 L 368 156 L 369 164 L 361 165 Z`,
-  MT:`M 385 295 L 392 294 L 393 300 L 386 300 Z`,
-  CY:`M 490 268 L 505 265 L 506 273 L 492 274 Z`,
-  LT:`M 435 120 L 455 117 L 457 133 L 437 135 Z`,
-  LV:`M 440 103 L 462 100 L 464 117 L 442 119 Z`,
-  EE:`M 445 88 L 465 85 L 466 100 L 446 102 Z`,
-  IS:`M 185 60 L 230 50 L 235 75 L 195 82 Z`,
-  CN:`M 620 175 L 720 165 L 730 240 L 660 265 L 610 240 Z`,
-  US:`M 60 145 L 185 140 L 188 205 L 70 210 Z`,
-  CA:`M 60 80 L 195 72 L 195 140 L 62 145 Z`,
-  TR:`M 490 222 L 555 215 L 558 240 L 495 245 Z`,
-  IL:`M 505 260 L 515 257 L 516 270 L 506 272 Z`,
-  MA:`M 240 280 L 305 268 L 308 300 L 243 308 Z`,
-};
+// ── Choropleth map — real GeoJSON ──────────────────────────────────────────
+let _geoData=null; // cache GeoJSON
 
-function renderChoropleth(cc, maxCount){
+async function renderChoropleth(cc, maxCount){
   const svg=document.getElementById('geo-map');
   if(!svg) return;
 
-  // Color scale: light blue → dark blue
+  // Load GeoJSON once
+  if(!_geoData){
+    try{
+      const r=await fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson');
+      _geoData=await r.json();
+    }catch(e){
+      svg.innerHTML=`<text x="10" y="30" font-size="12" fill="#6b7280">Map unavailable — check network</text>`;
+      return;
+    }
+  }
+
+  const W=860, H=500;
+  // Mercator projection focused on Europe + nearby
+  // Bounds: lon -25..45, lat 25..72
+  const lonMin=-25,lonMax=60,latMin=25,latMax=72;
+  const scaleX=W/(lonMax-lonMin);
+  const scaleY=H/(latMax-latMin);
+
+  function project([lon,lat]){
+    // Simple equirectangular
+    const x=(lon-lonMin)*scaleX;
+    const y=H-(lat-latMin)*scaleY;
+    return [x,y];
+  }
+
+  function pathFromGeometry(geometry){
+    const coords=geometry.type==='Polygon'?[geometry.coordinates]:geometry.coordinates;
+    return coords.map(poly=>
+      poly[0].map((pt,i)=>{
+        const [x,y]=project(pt);
+        return (i===0?'M':'L')+x.toFixed(1)+' '+y.toFixed(1);
+      }).join(' ')+'Z'
+    ).join(' ');
+  }
+
   function getColor(count){
-    if(!count) return '#f0f4f8';
-    const t=Math.pow(count/maxCount, 0.5); // sqrt scale for better contrast
-    const r=Math.round(232+(26-232)*t);
-    const g=Math.round(240+(79-240)*t);
-    const b=Math.round(254+(138-254)*t);
+    if(!count) return '#e8f0fb';
+    const t=Math.pow(count/maxCount,0.5);
+    const r=Math.round(200+(26-200)*t);
+    const g=Math.round(220+(79-220)*t);
+    const b=Math.round(245+(138-245)*t);
     return `rgb(${r},${g},${b})`;
   }
 
   const tooltip=document.getElementById('geo-tooltip');
   const wrap=document.getElementById('geo-map-wrap');
 
-  let html='';
-  // Background
-  html+=`<rect width="860" height="520" fill="#f8f9fc" rx="4"/>`;
-  // Ocean tint for Europe area
-  html+=`<rect x="170" y="30" width="420" height="320" fill="#dbeafe" rx="8" opacity=".3"/>`;
+  // Map ISO-3 to ISO-2 (GeoJSON uses ISO-3)
+  const ISO3_TO_2={FRA:'FR',ESP:'ES',DEU:'DE',ITA:'IT',NLD:'NL',
+    BEL:'BE',CHE:'CH',AUT:'AT',POL:'PL',CZE:'CZ',SVK:'SK',HUN:'HU',
+    ROU:'RO',BGR:'BGR'?'BG':'BG',GRC:'EL',HRV:'HR',SVN:'SI',SRB:'RS',
+    PRT:'PT',SWE:'SE',DNK:'DK',NOR:'NO',FIN:'FI',EST:'EE',LVA:'LV',
+    LTU:'LT',GBR:'UK',IRL:'IE',ISL:'IS',LUX:'LU',MLT:'MT',CYP:'CY',
+    TUR:'TR',ISR:'IL',MAR:'MA',CHN:'CN',USA:'US',CAN:'CA',
+    UKR:'UA',BLR:'BY',MDA:'MD',ALB:'AL',BIH:'BA',MKD:'MK',MNE:'ME',
+    ARM:'AM',GEO:'GE',AZE:'AZ',KOR:'KR',AUS:'AU',NZL:'NZ',BRA:'BR',
+    ARG:'AR',JPN:'JP',ZAF:'ZA',EGY:'EG',LBN:'LB',TUN:'TN',
+    BGR:'BG',
+  };
 
-  Object.entries(GEO_PATHS).forEach(([code,path])=>{
-    const normCode=CC_NORM[code]||code;
-    const count=cc[code]||cc[normCode]||0;
-    const col=getColor(count);
-    const stroke=count?'#1a4f8a':'#c0cfe0';
-    const sw=count?1.5:0.8;
-    html+=`<path d="${path}" fill="${col}" stroke="${stroke}" stroke-width="${sw}"
-      style="cursor:${count?'pointer':'default'};transition:fill .2s"
-      onmouseover="geoHover(event,'${CC_NORM[code]||code}',${count})"
-      onmouseout="document.getElementById('geo-tooltip').style.display='none'"
-      onclick="${count?`toggleCountry('${code}')`:''}"/>`;
-    // Country label for large countries
-    // (skip labels for tiny countries)
+  let html=`<rect width="${W}" height="${H}" fill="#dbeafe" rx="6" opacity=".4"/>`;
+
+  // Filter features in viewport
+  const features=_geoData.features.filter(f=>{
+    const bb=getBbox(f.geometry);
+    return bb&&bb[2]>lonMin&&bb[0]<lonMax&&bb[3]>latMin&&bb[1]<latMax;
   });
 
+  features.forEach(f=>{
+    const iso3=f.properties.ISO_A3||f.properties.iso_a3||'';
+    const iso2=ISO3_TO_2[iso3]||'';
+    const count=iso2?(cc[iso2]||cc[CC_NORM[iso2]||iso2]||0):0;
+    const col=getColor(count);
+    const stroke=count?'#1a4f8a':'#b8ccdf';
+    const sw=count?1.2:0.5;
+    const name=f.properties.ADMIN||f.properties.name||iso2;
+    try{
+      const d=pathFromGeometry(f.geometry);
+      if(!d||d.length<10) return;
+      html+=`<path d="${d}" fill="${col}" stroke="${stroke}" stroke-width="${sw}"
+        style="cursor:${count?'pointer':'default'}"
+        onmouseover="geoHover(event,'${name.replace(/'/g,'')} (${iso2})',${count})"
+        onmouseout="document.getElementById('geo-tooltip').style.display='none'"
+        ${count&&iso2?`onclick="toggleCountry('${iso2}')"`:''}/>`;
+    }catch(e){}
+  });
+
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
   svg.innerHTML=html;
 
   // Legend
@@ -1795,31 +1807,37 @@ function renderChoropleth(cc, maxCount){
     legendEl.innerHTML=Array.from({length:steps},(_,i)=>{
       const t=i/(steps-1);
       const count=Math.round(t*maxCount);
-      return `<div style="width:20px;height:10px;border-radius:2px;background:${getColor(count)};border:1px solid #c0cfe0" title="${count}"></div>`;
+      return `<div style="width:18px;height:10px;border-radius:2px;background:${getColor(count)};border:1px solid #b8ccdf" title="${count}"></div>`;
     }).join('');
   }
 }
 
-function geoHover(e, code, count){
+function getBbox(geometry){
+  try{
+    const coords=geometry.type==='Polygon'?geometry.coordinates[0]:geometry.coordinates[0][0];
+    const lons=coords.map(c=>c[0]),lats=coords.map(c=>c[1]);
+    return[Math.min(...lons),Math.min(...lats),Math.max(...lons),Math.max(...lats)];
+  }catch(e){return null;}
+}
+
+function geoHover(e, name, count){
   const tip=document.getElementById('geo-tooltip');
   const wrap=document.getElementById('geo-map-wrap');
   if(!tip||!wrap) return;
   const rect=wrap.getBoundingClientRect();
   tip.style.display='block';
   tip.style.left=(e.clientX-rect.left+10)+'px';
-  tip.style.top=(e.clientY-rect.top-28)+'px';
-  tip.innerHTML=`<strong>${code}</strong>${count?` · ${count} participation${count>1?'s':''}`:' · no data'}`;
+  tip.style.top=(e.clientY-rect.top-32)+'px';
+  tip.innerHTML=`<strong>${name}</strong>${count?` · ${count} participation${count>1?'s':''}`:' · no data'}`;
 }
 
 function toggleCountry(code){
-  // Add country to sidebar filter
   const normCode=CC_NORM[code]||code;
   if(FILTERS.country.has(code)||FILTERS.country.has(normCode)){
     FILTERS.country.delete(code);FILTERS.country.delete(normCode);
   } else {
     FILTERS.country.add(code);
   }
-  // Sync checkboxes
   document.querySelectorAll('[data-key="country"]').forEach(cb=>{
     if(cb.value===code||cb.value===normCode) cb.checked=FILTERS.country.has(cb.value);
   });

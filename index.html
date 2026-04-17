@@ -1097,39 +1097,37 @@ function renderDisciplines(){
   });
   window._domToIds=domToIds;
 
-  // Build _domDescendants: for each node key, collect ALL project ids
-  // from that node AND all its descendants (for parent-node filtering)
-  const domDescendants={};
-  function collectIds(node){
-    const key=node.path.join('|||');
-    if(!domDescendants[key]) domDescendants[key]=new Set();
-    // Direct match: any project whose categories include this node's name
-    FILTERED.forEach(p=>{
-      const pkey=p.id+'|'+p.programme;
-      const cats=projectCats(p);
-      // Match if any category equals or starts with this node's path segment
-      if(cats.some(c=>c===node.name)){
-        domDescendants[key].add(pkey);
-      }
-      // Also match by EuroSciVoc path prefix
-      (p.euroSciVoc||[]).forEach(sv=>{
-        if(sv.path&&sv.path.includes('/'+node.name+'/')||
-           sv.path&&sv.path.endsWith('/'+node.name)||
-           sv.path&&sv.path===node.path.map(x=>'/'+x).join('')){
+  // Build _domDescendants once from IT_PROJECTS (not FILTERED)
+  // so it is independent of active filters
+  if(!window._domDescendants){
+    const domDescendants={};
+    function collectIds(node){
+      const key=node.path.join('|||');
+      if(!domDescendants[key]) domDescendants[key]=new Set();
+      IT_PROJECTS.forEach(p=>{
+        const pkey=p.id+'|'+p.programme;
+        // Match by EuroSciVoc path
+        (p.euroSciVoc||[]).forEach(sv=>{
+          if(sv.path&&(
+            sv.path.includes('/'+node.name+'/')||
+            sv.path.endsWith('/'+node.name)
+          )) domDescendants[key].add(pkey);
+        });
+        // Match by projectCats (topic fallback)
+        if(projectCats(p).some(c=>c===node.name))
           domDescendants[key].add(pkey);
-        }
       });
-    });
-    // Recurse into children and merge their ids up
-    node.children.forEach(c=>{
-      collectIds(c);
-      const ckey=c.path.join('|||');
-      (domDescendants[ckey]||new Set()).forEach(id=>domDescendants[key].add(id));
-    });
+      // Recurse and bubble up children ids
+      node.children.forEach(c=>{
+        collectIds(c);
+        const ckey=c.path.join('|||');
+        (domDescendants[ckey]||new Set()).forEach(id=>domDescendants[key].add(id));
+      });
+    }
+    const tree=getDomTree();
+    tree.children.forEach(c=>collectIds(c));
+    window._domDescendants=domDescendants;
   }
-  const tree=getDomTree();
-  tree.children.forEach(c=>collectIds(c));
-  window._domDescendants=domDescendants;
 
   // Doughnut chart (L1 summary)
   const domCount={};
@@ -1377,21 +1375,18 @@ function renderSelPanel(){
     </div>`;
   }).join('');
 
-  // Calculate counts directly from IT_PROJECTS applying ONLY discipline filters
-  // (independent of other active filters, so counts are always correct)
+  // Calculate counts from IT_PROJECTS using only discipline filters
   function matchesDisciplines(p){
     if(!DOMAIN_FILTERS.length) return true;
+    const pkey=p.id+'|'+p.programme;
     const matchOne=df=>{
       const ids=window._domDescendants&&window._domDescendants[df.key];
-      if(ids&&ids.size>0) return ids.has(p.id+'|'+p.programme);
-      return (p.domains||[]).some(d=>d===df.name)||
-             (p.domains_l2||[]).some(d=>d===df.name);
+      return ids&&ids.size>0 ? ids.has(pkey) : projectCats(p).some(c=>c===df.name);
     };
     return DOMAIN_OPERATOR==='AND'
       ? DOMAIN_FILTERS.every(matchOne)
       : DOMAIN_FILTERS.some(matchOne);
   }
-
   const matchingProjects=IT_PROJECTS.filter(matchesDisciplines);
   const projCount=matchingProjects.length;
   const orgSet=new Set();

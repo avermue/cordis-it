@@ -1342,9 +1342,8 @@ function toggleDomSel(df){
     if(DOMAIN_FILTERS.length>=3) DOMAIN_FILTERS.shift();
     DOMAIN_FILTERS.push(df);
   }
-  renderAcc();
-  renderSelPanel();
-  apply();
+  apply(); // update FILTERED first
+  renderAcc(); // then re-render UI with fresh counts
 }
 
 function setDomOp(op){

@@ -446,8 +446,8 @@ dl.kv dd{color:var(--ink)}
         <div style="display:grid;grid-template-columns:1fr 300px;gap:12px">
           <!-- Left: map -->
           <div class="chart-box" style="padding:10px">
-            <div class="chart-title">Partner countries — participations (click to filter)</div>
-            <div id="geo-map-wrap" style="position:relative">
+            <div class="chart-title">Partner countries — participations</div>
+            <div id="geo-map-wrap" style="position:relative;max-width:70%">
               <svg id="geo-map" viewBox="0 0 860 533" style="width:100%;height:auto;display:block"></svg>
               <div id="geo-tooltip" style="position:absolute;display:none;background:var(--ink);color:#fff;padding:5px 9px;border-radius:4px;font-size:.72rem;pointer-events:none;white-space:nowrap;z-index:10"></div>
             </div>
@@ -1592,10 +1592,21 @@ function renderGeo(){
   const cc={};
   FILTERED.forEach(p=>p.partnerCountries.forEach(c=>{cc[c]=(cc[c]||0)+1;}));
   const sorted=Object.entries(cc).sort((a,b)=>b[1]-a[1]);
-  const maxCount=sorted.length?sorted[0][1]:1;
+  // Exclude FR from color scale (FR is always max → shown in dark grey)
+  const maxCount=sorted.filter(([c])=>c!=='FR').length?sorted.filter(([c])=>c!=='FR')[0][1]:1;
+
+  // Count unique organisations per country
+  const orgsByCountry={};
+  FILTERED.forEach(p=>(p.partners||[]).forEach(o=>{
+    if(!o.country) return;
+    if(!orgsByCountry[o.country]) orgsByCountry[o.country]=new Set();
+    orgsByCountry[o.country].add(o.name);
+  }));
+  const orgCount={};
+  Object.entries(orgsByCountry).forEach(([c,s])=>{orgCount[c]=s.size;});
 
   // ── Choropleth ──────────────────────────────────────────────────────────
-  renderChoropleth(cc, maxCount);
+  renderChoropleth(cc, maxCount, orgCount);
 
   // ── Top 10 sans FR ─────────────────────────────────────────────────────
   const top10=sorted.filter(([c])=>c!=='FR').slice(0,10);
@@ -1741,11 +1752,12 @@ const GEO_PATHS={
 // CORDIS code → GEO_PATHS key
 const GEO_CC={'AL':'AL','AT':'AT','BA':'BA','BE':'BE','BG':'BG','BY':'BY','CH':'CH','CY':'CY','CZ':'CZ','DE':'DE','DK':'DK','EE':'EE','EL':'EL','ES':'ES','FI':'FI','FR':'FR','HR':'HR','HU':'HU','IE':'IE','IL':'IL','IS':'IS','IT':'IT','LT':'LT','LU':'LU','LV':'LV','MA':'MA','MD':'MD','ME':'ME','MK':'MK','NL':'NL','NO':'NO','PL':'PL','PT':'PT','RO':'RO','RS':'RS','SE':'SE','SI':'SI','SK':'SK','TR':'TR','UA':'UA','UK':'UK','GB':'UK','GR':'EL'};
 
-function renderChoropleth(cc, maxCount){
+function renderChoropleth(cc, maxCount, orgCount){
   const svg=document.getElementById('geo-map');
   if(!svg) return;
 
-  function getColor(count){
+  function getColor(count, isFR){
+    if(isFR) return '#4a5568'; // dark grey for France
     if(!count) return '#e8f0fb';
     const t=Math.pow(count/maxCount, 0.5);
     const r=Math.round(200+(26-200)*t);
@@ -1757,18 +1769,21 @@ function renderChoropleth(cc, maxCount){
   let html=`<rect width="860" height="533" fill="#dbeafe" rx="6" opacity=".35"/>`;
 
   Object.entries(GEO_PATHS).forEach(([geoCode,path])=>{
-    let count=0, cordisCode='';
+    let count=0, orgs=0, cordisCode='';
     Object.entries(GEO_CC).forEach(([c,g])=>{
-      if(g===geoCode&&(cc[c]||0)>count){count=cc[c]||0;cordisCode=c;}
+      if(g===geoCode){
+        count+=(cc[c]||0);
+        orgs+=(orgCount[c]||0);
+        if(!cordisCode&&(cc[c]||0)) cordisCode=c;
+      }
     });
-    const col=getColor(count);
-    const stroke=count?'#1a4f8a':'#a8c4de';
-    const sw=count?1.5:0.6;
+    const isFR=geoCode==='FR';
+    const col=getColor(count, isFR);
+    const stroke=(count||isFR)?'#1a4f8a':'#a8c4de';
+    const sw=(count||isFR)?0.8:0.4;
     html+=`<path d="${path}" fill="${col}" stroke="${stroke}" stroke-width="${sw}"
-      style="cursor:${count?'pointer':'default'}"
-      onmouseover="geoHover(event,'${geoCode}',${count})"
-      onmouseout="document.getElementById('geo-tooltip').style.display='none'"
-      ${count?`onclick="toggleCountry('${cordisCode}')"`:''}/>`;
+      onmouseover="geoHover(event,'${geoCode}',${count},${orgs})"
+      onmouseout="document.getElementById('geo-tooltip').style.display='none'"/>`;
   });
 
   svg.innerHTML=html;
@@ -1777,12 +1792,12 @@ function renderChoropleth(cc, maxCount){
   if(legendEl){
     legendEl.innerHTML=Array.from({length:6},(_,i)=>{
       const count=Math.round(i/5*maxCount);
-      return `<div style="width:18px;height:10px;border-radius:2px;background:${getColor(count)};border:1px solid #a8c4de" title="${count}"></div>`;
+      return `<div style="width:18px;height:10px;border-radius:2px;background:${getColor(count,false)};border:1px solid #a8c4de" title="${count}"></div>`;
     }).join('');
   }
 }
 
-function geoHover(e, code, count){
+function geoHover(e, code, count, orgs){
   const tip=document.getElementById('geo-tooltip');
   const wrap=document.getElementById('geo-map-wrap');
   if(!tip||!wrap) return;
@@ -1790,7 +1805,11 @@ function geoHover(e, code, count){
   tip.style.display='block';
   tip.style.left=(e.clientX-rect.left+10)+'px';
   tip.style.top=(e.clientY-rect.top-32)+'px';
-  tip.innerHTML=`<strong>${code}</strong>${count?` · ${count} participation${count>1?'s':''}`:' · no data'}`;
+  if(!count){
+    tip.innerHTML=`<strong>${code}</strong> · no data`;
+  } else {
+    tip.innerHTML=`<strong>${code}</strong> · ${count} participation${count>1?'s':''}<br><span style="font-size:.75rem;opacity:.85">${orgs} organisation${orgs>1?'s':''}</span>`;
+  }
 }
 
 function toggleCountry(code){

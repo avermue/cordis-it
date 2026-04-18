@@ -443,12 +443,12 @@ dl.kv dd{color:var(--ink)}
       <div class="geo-grid">
 
         <!-- Row 1: Choropleth map (left) + Top10 + Regions (right) -->
-        <div style="display:grid;grid-template-columns:1fr 300px;gap:12px">
+        <div style="display:grid;grid-template-columns:minmax(0,600px) 300px;gap:12px;justify-content:center">
           <!-- Left: map -->
           <div class="chart-box" style="padding:10px">
             <div class="chart-title">Partner countries — participations</div>
             <div id="geo-map-wrap" style="position:relative">
-              <svg id="geo-map" viewBox="0 0 860 325" style="width:100%;height:auto;display:block"></svg>
+              <svg id="geo-map" viewBox="472 -5 391 333" style="width:100%;height:auto;display:block"></svg>
               <div id="geo-tooltip" style="position:absolute;display:none;background:var(--ink);color:#fff;padding:5px 9px;border-radius:4px;font-size:.72rem;pointer-events:none;white-space:nowrap;z-index:10"></div>
             </div>
             <div id="geo-legend" style="display:flex;gap:6px;align-items:center;margin-top:6px;font-size:.65rem;color:var(--ink-light);font-family:'Fira Code',monospace">
@@ -1765,7 +1765,7 @@ function renderChoropleth(cc, maxCount, orgCount){
     return `rgb(${r},${g},${b})`;
   }
 
-  let html=`<rect width="860" height="325" fill="#dbeafe" rx="6" opacity=".35"/>`;
+  let html=`<rect x="472" y="-5" width="391" height="333" fill="#dbeafe" rx="6" opacity=".35"/>`;
 
   Object.entries(GEO_PATHS).forEach(([geoCode,path])=>{
     let count=0, orgs=0, cordisCode='';

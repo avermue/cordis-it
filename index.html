@@ -443,7 +443,7 @@ dl.kv dd{color:var(--ink)}
       <div class="geo-grid">
 
         <!-- Row 1: Choropleth map (left) + Top10 + Regions (right) -->
-        <div style="display:grid;grid-template-columns:1fr 300px;gap:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <!-- Left: map -->
           <div class="chart-box" style="padding:10px">
             <div class="chart-title">Partner countries — participations</div>
@@ -472,7 +472,7 @@ dl.kv dd{color:var(--ink)}
 
         <!-- Row 2: Regional evolution stacked area -->
         <div class="chart-box">
-          <div class="chart-title">Partner regions by project start year</div>
+          <div class="chart-title">Partner regions by project start year (%)</div>
           <canvas id="chart-region-time"></canvas>
         </div>
 
@@ -1660,14 +1660,16 @@ function renderGeo(){
     </div>`;
   }).join('');
 
-  // ── Stacked area — regions over time ───────────────────────────────────
+  // ── Stacked area 100% — regions over time ──────────────────────────────
   const REG_ORDER=Object.keys(REGIONS).filter(r=>r!=='Other').concat(['Other']);
   const REG_COLORS_T={
-    'Western Europe': 'rgba(37,99,171,.75)',
-    'Northern Europe':'rgba(8,145,178,.75)',
-    'Southern Europe':'rgba(22,101,52,.75)',
-    'Central & Eastern Europe': 'rgba(109,40,217,.75)',
-    'Other':          'rgba(156,163,175,.6)',
+    'Western Europe':             'rgba(37,99,171,.80)',
+    'Northern Europe':            'rgba(14,165,197,.80)',
+    'Southern Europe':            'rgba(234,88,12,.80)',
+    'Central & Eastern Europe':   'rgba(124,58,237,.80)',
+    'North America':              'rgba(16,185,129,.80)',
+    'China, Hong Kong & Taiwan':  'rgba(220,38,38,.80)',
+    'Other':                      'rgba(156,163,175,.60)',
   };
   const byYearReg={};
   FILTERED.forEach(p=>{
@@ -1681,6 +1683,11 @@ function renderGeo(){
     });
   });
   const years=Object.keys(byYearReg).sort();
+  // Convert to 100% stacked (percentages)
+  const yearTotals={};
+  years.forEach(y=>{
+    yearTotals[y]=Object.values(byYearReg[y]||{}).reduce((s,v)=>s+v,0)||1;
+  });
   destroyChart('chart-region-time');
   CHARTS['chart-region-time']=new Chart(document.getElementById('chart-region-time'),{
     type:'line',
@@ -1688,18 +1695,21 @@ function renderGeo(){
       labels:years,
       datasets:REG_ORDER.filter(r=>sortedRegions.some(([sr])=>sr===r)).map(r=>({
         label:r,
-        data:years.map(y=>byYearReg[y]?.[r]||0),
+        data:years.map(y=>Math.round(((byYearReg[y]?.[r]||0)/yearTotals[y])*100)),
         backgroundColor:REG_COLORS_T[r]||'rgba(156,163,175,.6)',
-        borderColor:(REG_COLORS_T[r]||'rgba(156,163,175,.6)').replace('.75)','.95)').replace('.6)','.8)'),
-        borderWidth:1.5, fill:true, tension:0.35, pointRadius:2,
+        borderColor:(REG_COLORS_T[r]||'rgba(156,163,175,.6)').replace('.80)','.95)').replace('.60)','.85)'),
+        borderWidth:1, fill:true, tension:0.35, pointRadius:2,
       }))
     },
     options:{
       responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},
+      plugins:{
+        legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}%`}}
+      },
       scales:{
         x:{stacked:true},
-        y:{stacked:true,beginAtZero:true,title:{display:true,text:'Countries'}}
+        y:{stacked:true,beginAtZero:true,max:100,title:{display:true,text:'%'},ticks:{callback:v=>v+'%'}}
       }
     }
   });

@@ -60,21 +60,35 @@ function renderGeo() {
     loadGeoPaths().then(() => renderChoropleth(cc, maxCount, orgCount, highlightCodes));
   }
 
-  // ── Top 25 vertical bar chart (excl. FR) ──
+  // ── Top 25 vertical bar chart (excl. FR) — EU vs non-EU colors ──
+  const EU_MEMBERS = new Set(['AT','BE','BG','HR','CY','CZ','DE','DK','EE','ES','FI','FR','GR','EL','HU','IE','IT','LT','LU','LV','MT','NL','PL','PT','RO','SE','SI','SK']);
   const top25 = sorted.filter(([c]) => c !== 'FR').slice(0, 25);
+  const top25Colors = top25.map(([c]) => {
+    const norm = CC_NORM[c] || c;
+    return EU_MEMBERS.has(c) || EU_MEMBERS.has(norm) ? 'rgba(37,99,171,.65)' : 'rgba(156,163,175,.55)';
+  });
   destroyChart('chart-countries');
   CHARTS['chart-countries'] = new Chart(document.getElementById('chart-countries'), {
     type: 'bar',
     data: {
       labels: top25.map(([c]) => CC_NORM[c] || c),
-      datasets: [{ data: top25.map(([, n]) => n), backgroundColor: 'rgba(37,99,171,.65)', borderRadius: 3 }]
+      datasets: [
+        { label: 'EU member', data: top25.map(([c, n]) => { const norm = CC_NORM[c] || c; return (EU_MEMBERS.has(c) || EU_MEMBERS.has(norm)) ? n : null; }), backgroundColor: 'rgba(37,99,171,.65)', borderRadius: 3 },
+        { label: 'Non-EU', data: top25.map(([c, n]) => { const norm = CC_NORM[c] || c; return (EU_MEMBERS.has(c) || EU_MEMBERS.has(norm)) ? null : n; }), backgroundColor: 'rgba(156,163,175,.55)', borderRadius: 3 },
+      ]
     },
     options: {
       responsive: true, maintainAspectRatio: true,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.raw} participations` } } },
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 10 }, boxWidth: 12, padding: 10 } },
+        tooltip: { callbacks: {
+          title: items => { const code = items[0].label; return CC_NAMES[code] || CC_NAMES[CC_NORM[code]] || code; },
+          label: c => c.raw !== null ? `${c.raw} participations` : ''
+        } }
+      },
       scales: {
         y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, font: { size: 10 } } },
-        x: { ticks: { font: { size: 9 }, maxRotation: 60, minRotation: 40 } }
+        x: { stacked: true, ticks: { font: { size: 9 }, maxRotation: 60, minRotation: 40 } }
       }
     }
   });

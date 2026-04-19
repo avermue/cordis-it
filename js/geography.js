@@ -121,7 +121,7 @@ function renderGeo() {
   const maxR = Math.max(...Object.values(rData).map(d => d.count), 1);
   const sortedRegions = Object.entries(rData).filter(([, d]) => d.count > 0).sort((a, b) => b[1].count - a[1].count);
   document.getElementById('region-grid').innerHTML = sortedRegions.map(([r, d]) => {
-    const flags = d.countries.sort((a, b) => (cc[b] || 0) - (cc[a] || 0)).slice(0, 6).map(flag).join(' ');
+    const flags = d.countries.sort((a, b) => (cc[b] || 0) - (cc[a] || 0)).slice(0, 12).map(flag).join(' ');
     const budgetStr = d.budget > 0 ? fmtM(d.budget) : '–';
     const isActive = REGION_FILTER === r;
     return `<div class="region-card ${isActive ? 'region-active' : ''}" onclick="toggleRegion('${r}')"

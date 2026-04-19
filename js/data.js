@@ -71,10 +71,14 @@ const REGIONS = {
   'Western Europe':             ['AT','BE','FR','DE','IE','LU','NL','CH','GB','UK'],
   'Southern Europe':            ['AL','BA','HR','CY','EL','GR','IT','MT','ME','MK','PT','RS','SI','ES','TR','XK'],
   'Central & Eastern Europe':   ['BG','BY','CZ','HU','MD','PL','RO','SK','UA'],
-  'North America':              ['US','CA','MX'],
-  'China, Hong Kong & Taiwan':  ['CN','HK','TW','MO'],
+  'Americas':                   ['US','CA','MX','BR','AR','CL','CO','PE','UY','EC','VE','CR','PA','CU','DO','GT','HN','NI','SV','BO','PY','JM','TT','HT','BZ','GY','SR','BB'],
+  'Asia':                       ['CN','HK','TW','MO','JP','KR','IN','IL','TH','VN','MY','SG','ID','PH','BD','PK','LK','NP','KH','LA','MM','KZ','UZ','GE','AM','AZ','JO','LB','SA','AE','QA','KW','BH','OM','IQ','IR','AF','SY','YE'],
+  'Africa':                     ['ZA','EG','MA','TN','DZ','NG','KE','GH','ET','TZ','UG','SN','CI','CM','MZ','RW','BF','ML','NE','MG','CD','CG','AO','ZW','BW','MW','NA','ZM','LS','SZ','MU','SC','CV','GA','BJ','TG','LR','SL','GM','GN','GW','TD','CF','SS','ER','SO','DJ','KM','ST'],
   'Other':                      []
 };
+
+/* European region keys (used for map highlighting) */
+const EURO_REGIONS = ['Northern Europe','Western Europe','Southern Europe','Central & Eastern Europe'];
 
 function getRegion(cc) {
   for (const [r, cs] of Object.entries(REGIONS)) if (cs.includes(cc)) return r;

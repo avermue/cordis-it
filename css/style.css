@@ -201,7 +201,7 @@ button{font-family:'Lato',sans-serif;cursor:pointer}
 
 /* ── GEO ── */
 .geo-grid{display:grid;gap:12px}
-#chart-countries{height:420px !important}
+/* #chart-countries sizing handled by Chart.js */
 #chart-region-time{max-height:220px !important}
 .region-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .region-card{background:var(--white);border:1px solid var(--rule);border-radius:var(--r);padding:10px}

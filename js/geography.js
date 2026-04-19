@@ -1,5 +1,7 @@
 /* ══════════════════════════════════════════════════════════════
    geography.js — Geography tab (choropleth, regions, charts)
+   All stats use IT_PROJECTS (global), NOT FILTERED.
+   Region clicks still filter other tabs via REGION_FILTER.
    ══════════════════════════════════════════════════════════════ */
 
 let GEO_PATHS = null;
@@ -19,15 +21,30 @@ async function loadGeoPaths() {
   }
 }
 
+/* ── Helper: which countries belong to the selected European region? ── */
+function getHighlightedCountryCodes() {
+  if (!REGION_FILTER || !EURO_REGIONS.includes(REGION_FILTER)) return new Set();
+  const codes = new Set(REGIONS[REGION_FILTER] || []);
+  // Add alternate CORDIS codes (EL↔GR, UK↔GB)
+  Object.entries(CC_NORM).forEach(([k, v]) => {
+    if (codes.has(v)) codes.add(k);
+    if (codes.has(k)) codes.add(v);
+  });
+  return codes;
+}
+
 function renderGeo() {
+  // ── All stats based on IT_PROJECTS (global) ──
+  const SRC = IT_PROJECTS;
+
   const cc = {};
-  FILTERED.forEach(p => p.partnerCountries.forEach(c => { cc[c] = (cc[c] || 0) + 1; }));
+  SRC.forEach(p => p.partnerCountries.forEach(c => { cc[c] = (cc[c] || 0) + 1; }));
   const sorted = Object.entries(cc).sort((a, b) => b[1] - a[1]);
   const maxCount = sorted.filter(([c]) => c !== 'FR').length ? sorted.filter(([c]) => c !== 'FR')[0][1] : 1;
 
-  // Count unique organisations per country
+  // Unique organisations per country
   const orgsByCountry = {};
-  FILTERED.forEach(p => (p.partners || []).forEach(o => {
+  SRC.forEach(p => (p.partners || []).forEach(o => {
     if (!o.country) return;
     if (!orgsByCountry[o.country]) orgsByCountry[o.country] = new Set();
     orgsByCountry[o.country].add(o.name);
@@ -35,32 +52,36 @@ function renderGeo() {
   const orgCount = {};
   Object.entries(orgsByCountry).forEach(([c, s]) => { orgCount[c] = s.size; });
 
-  // Choropleth (async load geo paths if needed)
+  // ── Choropleth ──
+  const highlightCodes = getHighlightedCountryCodes();
   if (GEO_PATHS) {
-    renderChoropleth(cc, maxCount, orgCount);
+    renderChoropleth(cc, maxCount, orgCount, highlightCodes);
   } else {
-    loadGeoPaths().then(() => renderChoropleth(cc, maxCount, orgCount));
+    loadGeoPaths().then(() => renderChoropleth(cc, maxCount, orgCount, highlightCodes));
   }
 
-  // Top 10 sans FR
-  const top10 = sorted.filter(([c]) => c !== 'FR').slice(0, 10);
+  // ── Top 25 vertical bar chart (excl. FR) ──
+  const top25 = sorted.filter(([c]) => c !== 'FR').slice(0, 25);
   destroyChart('chart-countries');
   CHARTS['chart-countries'] = new Chart(document.getElementById('chart-countries'), {
     type: 'bar',
     data: {
-      labels: top10.map(([c]) => CC_NORM[c] || c),
-      datasets: [{ data: top10.map(([, n]) => n), backgroundColor: 'rgba(37,99,171,.75)', borderRadius: 3 }]
+      labels: top25.map(([c]) => CC_NORM[c] || c),
+      datasets: [{ data: top25.map(([, n]) => n), backgroundColor: 'rgba(37,99,171,.65)', borderRadius: 3 }]
     },
     options: {
-      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: true,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.raw} participations` } } },
-      scales: { x: { beginAtZero: true, ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 11 } } } }
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, font: { size: 10 } } },
+        x: { ticks: { font: { size: 9 }, maxRotation: 60, minRotation: 40 } }
+      }
     }
   });
 
-  // Region tiles
+  // ── Region tiles (global data) ──
   const countryBudget = {};
-  FILTERED.forEach(p => (p.partners || []).forEach(o => {
+  SRC.forEach(p => (p.partners || []).forEach(o => {
     if (!o.country) return;
     countryBudget[o.country] = (countryBudget[o.country] || 0) + (o.ecContribution || 0);
   }));
@@ -93,19 +114,30 @@ function renderGeo() {
     </div>`;
   }).join('');
 
-  // Stacked area — regions over time
-  const REG_ORDER = Object.keys(REGIONS).filter(r => r !== 'Other').concat(['Other']);
+  // ── Stacked area chart (absolute, not 100%) — global data ──
   const REG_COLORS_T = {
-    'Western Europe':            'rgba(37,99,171,.80)',
-    'Northern Europe':           'rgba(14,165,197,.80)',
-    'Southern Europe':           'rgba(234,88,12,.80)',
-    'Central & Eastern Europe':  'rgba(124,58,237,.80)',
-    'North America':             'rgba(16,185,129,.80)',
-    'China, Hong Kong & Taiwan': 'rgba(220,38,38,.80)',
-    'Other':                     'rgba(156,163,175,.60)',
+    'Western Europe':            'rgba(100,150,210,.55)',
+    'Northern Europe':           'rgba(90,190,210,.50)',
+    'Southern Europe':           'rgba(220,160,90,.50)',
+    'Central & Eastern Europe':  'rgba(160,130,200,.50)',
+    'Americas':                  'rgba(110,195,160,.50)',
+    'Asia':                      'rgba(210,130,130,.50)',
+    'Africa':                    'rgba(180,170,120,.50)',
+    'Other':                     'rgba(175,175,185,.40)',
   };
+  const REG_BORDERS = {
+    'Western Europe':            'rgba(60,110,180,.85)',
+    'Northern Europe':           'rgba(40,155,180,.85)',
+    'Southern Europe':           'rgba(195,120,40,.85)',
+    'Central & Eastern Europe':  'rgba(120,85,175,.85)',
+    'Americas':                  'rgba(55,160,120,.85)',
+    'Asia':                      'rgba(185,80,80,.85)',
+    'Africa':                    'rgba(145,130,70,.85)',
+    'Other':                     'rgba(130,130,140,.70)',
+  };
+
   const byYearReg = {};
-  FILTERED.forEach(p => {
+  SRC.forEach(p => {
     const y = (p.startDate || '').slice(0, 4);
     if (!y || y < '2013') return;
     if (!byYearReg[y]) byYearReg[y] = {};
@@ -116,37 +148,43 @@ function renderGeo() {
     });
   });
   const years = Object.keys(byYearReg).sort();
-  const yearTotals = {};
-  years.forEach(y => { yearTotals[y] = Object.values(byYearReg[y] || {}).reduce((s, v) => s + v, 0) || 1; });
+
+  // Sort regions by total project count (desc) for stacking order
+  const regTotals = {};
+  sortedRegions.forEach(([r]) => {
+    regTotals[r] = years.reduce((s, y) => s + (byYearReg[y]?.[r] || 0), 0);
+  });
+  const REG_ORDER = sortedRegions.map(([r]) => r).sort((a, b) => regTotals[b] - regTotals[a]);
+
   destroyChart('chart-region-time');
   CHARTS['chart-region-time'] = new Chart(document.getElementById('chart-region-time'), {
     type: 'line',
     data: {
       labels: years,
-      datasets: REG_ORDER.filter(r => sortedRegions.some(([sr]) => sr === r)).map(r => ({
+      datasets: REG_ORDER.map(r => ({
         label: r,
-        data: years.map(y => Math.round(((byYearReg[y]?.[r] || 0) / yearTotals[y]) * 100)),
-        backgroundColor: REG_COLORS_T[r] || 'rgba(156,163,175,.6)',
-        borderColor: (REG_COLORS_T[r] || 'rgba(156,163,175,.6)').replace('.80)', '.95)').replace('.60)', '.85)'),
-        borderWidth: 1, fill: true, tension: 0.35, pointRadius: 2,
+        data: years.map(y => byYearReg[y]?.[r] || 0),
+        backgroundColor: REG_COLORS_T[r] || 'rgba(175,175,185,.40)',
+        borderColor: REG_BORDERS[r] || 'rgba(130,130,140,.70)',
+        borderWidth: 1.5, fill: true, tension: 0.35, pointRadius: 2,
       }))
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } },
-        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}%` } }
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw} project${ctx.raw !== 1 ? 's' : ''}` } }
       },
       scales: {
         x: { stacked: true },
-        y: { stacked: true, beginAtZero: true, max: 100, title: { display: true, text: '%' }, ticks: { callback: v => v + '%' } }
+        y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Projects' }, ticks: { stepSize: 1, precision: 0 } }
       }
     }
   });
 }
 
 /* ── Choropleth rendering ── */
-function renderChoropleth(cc, maxCount, orgCount) {
+function renderChoropleth(cc, maxCount, orgCount, highlightCodes) {
   const svg = document.getElementById('geo-map');
   if (!svg || !GEO_PATHS) return;
 
@@ -160,21 +198,29 @@ function renderChoropleth(cc, maxCount, orgCount) {
     return `rgb(${r},${g},${b})`;
   }
 
+  // Build a set of geoCode keys that should be highlighted
+  const highlightGeo = new Set();
+  if (highlightCodes.size) {
+    Object.entries(GEO_CC).forEach(([cordis, geo]) => {
+      if (highlightCodes.has(cordis)) highlightGeo.add(geo);
+    });
+  }
+
   let html = `<rect width="391" height="333" fill="#dbeafe" rx="6" opacity=".35"/>`;
 
   Object.entries(GEO_PATHS).forEach(([geoCode, path]) => {
-    let count = 0, orgs = 0, cordisCode = '';
+    let count = 0, orgs = 0;
     Object.entries(GEO_CC).forEach(([c, g]) => {
       if (g === geoCode) {
         count += (cc[c] || 0);
         orgs += (orgCount[c] || 0);
-        if (!cordisCode && (cc[c] || 0)) cordisCode = c;
       }
     });
     const isFR = geoCode === 'FR';
     const col = getColor(count, isFR);
-    const stroke = (count || isFR) ? '#1a4f8a' : '#a8c4de';
-    const sw = (count || isFR) ? 0.8 : 0.4;
+    const isHighlighted = highlightGeo.has(geoCode);
+    const stroke = isHighlighted ? '#cc2222' : (count || isFR) ? '#1a4f8a' : '#a8c4de';
+    const sw = isHighlighted ? 2.2 : (count || isFR) ? 0.8 : 0.4;
     html += `<path d="${path}" fill="${col}" stroke="${stroke}" stroke-width="${sw}"
       onmouseover="geoHover(event,'${geoCode}',${count},${orgs})"
       onmouseout="document.getElementById('geo-tooltip').style.display='none'"/>`;

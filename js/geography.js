@@ -34,35 +34,45 @@ function getHighlightedCountryCodes() {
 }
 
 function renderGeo() {
-  // ── All stats based on IT_PROJECTS (global) ──
+  // ── Global data for regions, stacked area ──
   const SRC = IT_PROJECTS;
 
+  // ── Programme-filtered data for map + top 25 ──
+  const SRC_PROG = FILTERS.programme.size
+    ? IT_PROJECTS.filter(p => FILTERS.programme.has(p.programme))
+    : IT_PROJECTS;
+
+  // Country counts from programme-filtered source
+  const ccProg = {};
+  SRC_PROG.forEach(p => p.partnerCountries.forEach(c => { ccProg[c] = (ccProg[c] || 0) + 1; }));
+  const sortedProg = Object.entries(ccProg).sort((a, b) => b[1] - a[1]);
+  const maxCountProg = sortedProg.filter(([c]) => c !== 'FR').length ? sortedProg.filter(([c]) => c !== 'FR')[0][1] : 1;
+
+  // Unique organisations per country (programme-filtered)
+  const orgsByCountryProg = {};
+  SRC_PROG.forEach(p => (p.partners || []).forEach(o => {
+    if (!o.country) return;
+    if (!orgsByCountryProg[o.country]) orgsByCountryProg[o.country] = new Set();
+    orgsByCountryProg[o.country].add(o.name);
+  }));
+  const orgCountProg = {};
+  Object.entries(orgsByCountryProg).forEach(([c, s]) => { orgCountProg[c] = s.size; });
+
+  // Country counts from global source (for regions + stacked area)
   const cc = {};
   SRC.forEach(p => p.partnerCountries.forEach(c => { cc[c] = (cc[c] || 0) + 1; }));
-  const sorted = Object.entries(cc).sort((a, b) => b[1] - a[1]);
-  const maxCount = sorted.filter(([c]) => c !== 'FR').length ? sorted.filter(([c]) => c !== 'FR')[0][1] : 1;
 
-  // Unique organisations per country
-  const orgsByCountry = {};
-  SRC.forEach(p => (p.partners || []).forEach(o => {
-    if (!o.country) return;
-    if (!orgsByCountry[o.country]) orgsByCountry[o.country] = new Set();
-    orgsByCountry[o.country].add(o.name);
-  }));
-  const orgCount = {};
-  Object.entries(orgsByCountry).forEach(([c, s]) => { orgCount[c] = s.size; });
-
-  // ── Choropleth ──
+  // ── Choropleth (programme-filtered) ──
   const highlightCodes = getHighlightedCountryCodes();
   if (GEO_PATHS) {
-    renderChoropleth(cc, maxCount, orgCount, highlightCodes);
+    renderChoropleth(ccProg, maxCountProg, orgCountProg, highlightCodes);
   } else {
-    loadGeoPaths().then(() => renderChoropleth(cc, maxCount, orgCount, highlightCodes));
+    loadGeoPaths().then(() => renderChoropleth(ccProg, maxCountProg, orgCountProg, highlightCodes));
   }
 
-  // ── Top 25 vertical bar chart (excl. FR) — EU vs non-EU colors ──
+  // ── Top 25 vertical bar chart (programme-filtered, excl. FR) ──
   const EU_MEMBERS = new Set(['AT','BE','BG','HR','CY','CZ','DE','DK','EE','ES','FI','FR','GR','EL','HU','IE','IT','LT','LU','LV','MT','NL','PL','PT','RO','SE','SI','SK']);
-  const top25 = sorted.filter(([c]) => c !== 'FR').slice(0, 25);
+  const top25 = sortedProg.filter(([c]) => c !== 'FR').slice(0, 25);
   const top25Colors = top25.map(([c]) => {
     const norm = CC_NORM[c] || c;
     return EU_MEMBERS.has(c) || EU_MEMBERS.has(norm) ? 'rgba(37,99,171,.65)' : 'rgba(156,163,175,.55)';

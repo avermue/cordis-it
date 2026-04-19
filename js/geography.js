@@ -116,24 +116,24 @@ function renderGeo() {
 
   // ── Stacked area chart (absolute, not 100%) — global data ──
   const REG_COLORS_T = {
-    'Western Europe':            'rgba(100,150,210,.55)',
-    'Northern Europe':           'rgba(90,190,210,.50)',
-    'Southern Europe':           'rgba(220,160,90,.50)',
-    'Central & Eastern Europe':  'rgba(160,130,200,.50)',
-    'Americas':                  'rgba(110,195,160,.50)',
-    'Asia':                      'rgba(210,130,130,.50)',
-    'Africa':                    'rgba(180,170,120,.50)',
-    'Other':                     'rgba(175,175,185,.40)',
+    'Western Europe':            'rgba(120,170,225,.60)',
+    'Northern Europe':           'rgba(110,205,225,.55)',
+    'Southern Europe':           'rgba(235,180,115,.55)',
+    'Central & Eastern Europe':  'rgba(180,155,220,.55)',
+    'Americas & Oceania':        'rgba(130,210,180,.55)',
+    'Asia':                      'rgba(225,155,155,.55)',
+    'Africa':                    'rgba(200,190,140,.55)',
+    'Rest of the World':         'rgba(190,190,200,.45)',
   };
   const REG_BORDERS = {
     'Western Europe':            'rgba(60,110,180,.85)',
     'Northern Europe':           'rgba(40,155,180,.85)',
     'Southern Europe':           'rgba(195,120,40,.85)',
     'Central & Eastern Europe':  'rgba(120,85,175,.85)',
-    'Americas':                  'rgba(55,160,120,.85)',
+    'Americas & Oceania':        'rgba(55,160,120,.85)',
     'Asia':                      'rgba(185,80,80,.85)',
     'Africa':                    'rgba(145,130,70,.85)',
-    'Other':                     'rgba(130,130,140,.70)',
+    'Rest of the World':         'rgba(130,130,140,.70)',
   };
 
   const byYearReg = {};

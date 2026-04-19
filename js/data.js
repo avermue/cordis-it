@@ -35,14 +35,31 @@ const CC_NAMES = {
   'MD':'Moldova','ME':'Montenegro','MK':'North Macedonia','MT':'Malta',
   'NL':'Netherlands','NO':'Norway','PL':'Poland','PT':'Portugal','RO':'Romania',
   'RS':'Serbia','SE':'Sweden','SI':'Slovenia','SK':'Slovakia','TR':'Türkiye',
-  'UA':'Ukraine','UK':'United Kingdom'
+  'UA':'Ukraine','UK':'United Kingdom',
+  'US':'United States','CA':'Canada','MX':'Mexico','BR':'Brazil','AR':'Argentina',
+  'CL':'Chile','CO':'Colombia','PE':'Peru','UY':'Uruguay','EC':'Ecuador',
+  'VE':'Venezuela','CR':'Costa Rica','PA':'Panama','CU':'Cuba','DO':'Dominican Republic',
+  'AU':'Australia','NZ':'New Zealand','FJ':'Fiji','PG':'Papua New Guinea',
+  'CN':'China','HK':'Hong Kong','TW':'Taiwan','MO':'Macao','JP':'Japan',
+  'KR':'South Korea','IN':'India','IL':'Israel','TH':'Thailand','VN':'Vietnam',
+  'MY':'Malaysia','SG':'Singapore','ID':'Indonesia','PH':'Philippines',
+  'BD':'Bangladesh','PK':'Pakistan','LK':'Sri Lanka','NP':'Nepal',
+  'KZ':'Kazakhstan','UZ':'Uzbekistan','GE':'Georgia','AM':'Armenia','AZ':'Azerbaijan',
+  'JO':'Jordan','LB':'Lebanon','SA':'Saudi Arabia','AE':'UAE','QA':'Qatar',
+  'KW':'Kuwait','BH':'Bahrain','OM':'Oman','IQ':'Iraq','IR':'Iran',
+  'ZA':'South Africa','EG':'Egypt','MA':'Morocco','TN':'Tunisia','DZ':'Algeria',
+  'NG':'Nigeria','KE':'Kenya','GH':'Ghana','ET':'Ethiopia','TZ':'Tanzania',
+  'UG':'Uganda','SN':'Senegal','CI':'Côte d\'Ivoire','CM':'Cameroon','MZ':'Mozambique',
+  'RW':'Rwanda','BF':'Burkina Faso','ML':'Mali','NE':'Niger','MG':'Madagascar',
+  'XK':'Kosovo','GB':'United Kingdom','GR':'Greece'
 };
 
 /* ── Formatting helpers ── */
 function flag(cc) {
   if (!cc || cc.length !== 2) return cc || '';
   const c = (CC_NORM[cc] || cc).toLowerCase();
-  return `<img src="https://flagcdn.com/16x12/${c}.png" alt="${cc}" title="${cc}"
+  const name = CC_NAMES[cc] || CC_NAMES[CC_NORM[cc]] || cc;
+  return `<img src="https://flagcdn.com/16x12/${c}.png" alt="${cc}" title="${name}"
     style="width:16px;height:12px;vertical-align:middle;border-radius:1px;margin:0 1px"
     onerror="this.replaceWith(document.createTextNode('${cc}'))">`;
 }
@@ -71,10 +88,10 @@ const REGIONS = {
   'Western Europe':             ['AT','BE','FR','DE','IE','LU','NL','CH','GB','UK'],
   'Southern Europe':            ['AL','BA','HR','CY','EL','GR','IT','MT','ME','MK','PT','RS','SI','ES','TR','XK'],
   'Central & Eastern Europe':   ['BG','BY','CZ','HU','MD','PL','RO','SK','UA'],
-  'Americas':                   ['US','CA','MX','BR','AR','CL','CO','PE','UY','EC','VE','CR','PA','CU','DO','GT','HN','NI','SV','BO','PY','JM','TT','HT','BZ','GY','SR','BB'],
+  'Americas & Oceania':         ['US','CA','MX','BR','AR','CL','CO','PE','UY','EC','VE','CR','PA','CU','DO','GT','HN','NI','SV','BO','PY','JM','TT','HT','BZ','GY','SR','BB','AU','NZ','FJ','PG','WS','TO','VU','SB','KI','FM','MH','PW','NR','TV'],
   'Asia':                       ['CN','HK','TW','MO','JP','KR','IN','IL','TH','VN','MY','SG','ID','PH','BD','PK','LK','NP','KH','LA','MM','KZ','UZ','GE','AM','AZ','JO','LB','SA','AE','QA','KW','BH','OM','IQ','IR','AF','SY','YE'],
   'Africa':                     ['ZA','EG','MA','TN','DZ','NG','KE','GH','ET','TZ','UG','SN','CI','CM','MZ','RW','BF','ML','NE','MG','CD','CG','AO','ZW','BW','MW','NA','ZM','LS','SZ','MU','SC','CV','GA','BJ','TG','LR','SL','GM','GN','GW','TD','CF','SS','ER','SO','DJ','KM','ST'],
-  'Other':                      []
+  'Rest of the World':          []
 };
 
 /* European region keys (used for map highlighting) */
@@ -82,7 +99,7 @@ const EURO_REGIONS = ['Northern Europe','Western Europe','Southern Europe','Cent
 
 function getRegion(cc) {
   for (const [r, cs] of Object.entries(REGIONS)) if (cs.includes(cc)) return r;
-  return 'Other';
+  return 'Rest of the World';
 }
 
 /* ── Topic → thematic category ── */

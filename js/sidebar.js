@@ -19,7 +19,7 @@ function buildSidebar() {
   buildList('f-status', 'status', [...new Set(IT_PROJECTS.map(p => p.status).filter(Boolean))].sort(), p => p.status);
 
   const ctries = [...new Set(IT_PROJECTS.flatMap(p => p.partnerCountries))].sort();
-  buildList('f-country', 'country', ctries, p => p.partnerCountries, cc => flag(cc) + ' ' + cc);
+  buildList('f-country', 'country', ctries, p => p.partnerCountries, cc => flag(cc) + ' ' + (CC_NAMES[cc] || CC_NAMES[CC_NORM[cc]] || cc));
 }
 
 function buildList(elId, key, vals, getter, labelFn) {

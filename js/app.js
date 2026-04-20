@@ -240,7 +240,7 @@ function bindEvents() {
     btn.classList.add('on');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('on');
     const sortBlock = document.getElementById('sort-block');
-    if (sortBlock) sortBlock.style.display = (btn.dataset.tab === 'projects' || btn.dataset.tab === 'partners') ? '' : 'none';
+    if (sortBlock) sortBlock.style.display = (btn.dataset.tab === 'projects') ? '' : 'none';
   }));
 
   document.getElementById('search').addEventListener('input', e => { SEARCH = e.target.value; apply(); });

@@ -28,7 +28,7 @@ function openModal(id, prog) {
 
   document.getElementById('m-it').innerHTML = `
     <dt>IT Role</dt><dd>${roleL(p.itRole)}</dd>
-    <dt>IT EU Contribution</dt><dd>${p.itEcContribution ? fmtM(p.itEcContribution) : 'Not specified'}</dd>
+    <dt>IT EU Contribution</dt><dd>${p.itEcContribution ? fmtM(p.itEcContribution) : '0€ (via INRAE)'}</dd>
     <dt>Partners</dt><dd>${p.partnerCount} organisations</dd>
     <dt>Countries</dt><dd>${p.partnerCountries.map(c => flag(c) + ' ' + c).join(', ') || '–'}</dd>`;
 

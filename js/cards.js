@@ -25,7 +25,7 @@ function renderCards() {
       </div>
       <div class="card-foot">
         <span class="card-dates">📅 ${fmtD(p.startDate)} → ${fmtD(p.endDate)}</span>
-        <span class="card-budget">${p.itEcContribution ? fmtM(p.itEcContribution) : p.ecMaxContribution ? 'Total: ' + fmtM(p.ecMaxContribution) : '–'}</span>
+        <span class="card-budget">${p.itEcContribution ? fmtM(p.itEcContribution) : p.hasIT && !p.itEcContribution ? '0€ (via INRAE)' : p.ecMaxContribution ? 'Total: ' + fmtM(p.ecMaxContribution) : '–'}</span>
         <span class="card-flags" title="${p.partnerCountries.join(', ')}">${flags}</span>
         <a class="card-link" href="${p.cordisUrl}" target="_blank" onclick="event.stopPropagation()">CORDIS ↗</a>
       </div>

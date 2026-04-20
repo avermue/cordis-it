@@ -93,21 +93,26 @@ function renderDisciplines() {
     window._domDescendants = domDescendants;
   }
 
-  // Doughnut chart (L1 summary)
-  const domCount = {};
-  FILTERED.forEach(p => projectCats(p, 'l1').filter(Boolean).forEach(d => { domCount[d] = (domCount[d] || 0) + 1; }));
-  const domE = Object.entries(domCount).filter(([k]) => k && k.trim()).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  // Doughnut chart — built from tree (EuroSciVoc L1 only, no fallback categories)
+  const tree = getDomTree();
+  const domE = tree.children
+    .filter(n => n.projects > 0)
+    .map(n => [n.name, n.projects])
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 12);
   destroyChart('chart-domains');
   if (domE.length) {
     domE.forEach(([d], i) => { L1_COLORS_DOM[d] = DONUT_PAL[i % DONUT_PAL.length]; });
     if (_donutDrillNode) {
-      const freshEntries = _donutDrillNode.children.map(c => [c.name, c.projects]);
-      renderDonutChart(freshEntries.length ? freshEntries : domE, freshEntries.length ? _donutDrillNode : null);
+      const freshNode = tree.children.find(n => n.name === _donutDrillNode.name) || _donutDrillNode;
+      const freshEntries = freshNode.children.map(c => [c.name, c.projects]);
+      renderDonutChart(freshEntries.length ? freshEntries : domE, freshEntries.length ? freshNode : null);
     } else {
       renderDonutChart(domE, null);
     }
   }
 
+  renderL2Top25();
   renderAcc();
   renderSelPanel();
 }
@@ -118,10 +123,10 @@ function renderDonutChart(entries, drillNode) {
   destroyChart('chart-domains');
   if (!entries || !entries.length) return;
 
-  const titleEl = document.querySelector('#tab-disciplines .chart-title');
+  const titleEl = document.getElementById('chart-domains-title');
   if (titleEl) titleEl.textContent = drillNode
     ? `Scientific Domains — ${drillNode.name}`
-    : 'Scientific Domains overview (EuroSciVoc)';
+    : 'Scientific Disciplines overview (EuroSciVoc)';
 
   const labels = entries.map(e => e[0]);
   const data = entries.map(e => e[1]);
@@ -261,6 +266,7 @@ function resetDomainFilter() {
   _donutDrillNode = null;
   const tree = getDomTree();
   renderDonutChart(tree.children.map(c => [c.name, c.projects]), null);
+  renderL2Top25();
   renderAcc();
   renderSelPanel();
   apply();
@@ -345,11 +351,63 @@ function removeDomFilter(key) {
   renderAcc();
 }
 
+/* ── Top 25 L2 bar chart colored by L1 ── */
+function renderL2Top25() {
+  const tree = getDomTree();
+
+  // Collect all L2 nodes across all L1 nodes, with their L1 parent
+  const l2Entries = [];
+  tree.children.forEach(l1Node => {
+    const l1Color = L1_COLORS_DOM[l1Node.name] || DOM_PAL[0];
+    l1Node.children.forEach(l2Node => {
+      if (l2Node.projects > 0) {
+        l2Entries.push({ name: l2Node.name, count: l2Node.projects, l1: l1Node.name, color: l1Color });
+      }
+    });
+  });
+
+  // Sort by count desc, take top 25
+  l2Entries.sort((a, b) => b.count - a.count);
+  const top25 = l2Entries.slice(0, 25);
+
+  destroyChart('chart-l2-top25');
+  if (!top25.length) return;
+
+  CHARTS['chart-l2-top25'] = new Chart(document.getElementById('chart-l2-top25'), {
+    type: 'bar',
+    data: {
+      labels: top25.map(e => e.name),
+      datasets: [{
+        data: top25.map(e => e.count),
+        backgroundColor: top25.map(e => e.color + 'aa'),
+        borderColor: top25.map(e => e.color),
+        borderWidth: 1,
+        borderRadius: 3,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          title: items => items[0].label,
+          label: c => `${c.raw} project${c.raw !== 1 ? 's' : ''} · ${top25[c.dataIndex].l1}`
+        }}
+      },
+      scales: {
+        x: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, font: { size: 9 } } },
+        y: { ticks: { font: { size: 9 } } }
+      }
+    }
+  });
+}
+
 function goToTabDisc(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('on'));
   const btn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
-  if (btn) { btn.classList.add('on'); const sortBlock = document.getElementById('sort-block'); if (sortBlock) sortBlock.style.display = (tab === 'projects' || tab === 'partners') ? '' : 'none'; }
+  if (btn) { btn.classList.add('on'); const sortBlock = document.getElementById('sort-block'); if (sortBlock) sortBlock.style.display = tab === 'projects' ? '' : 'none'; }
   document.getElementById('tab-' + tab).classList.add('on');
 }
 

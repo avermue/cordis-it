@@ -130,6 +130,7 @@ button{font-family:'Lato',sans-serif;cursor:pointer}
 .chart-box.third{grid-column:span 1}
 .chart-title{font-family:'Fira Code',monospace;font-size:.62rem;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-light);margin-bottom:8px}
 .chart-box canvas{max-height:220px !important}
+.chart-box canvas#chart-l2-top25{max-height:none !important}
 .chart-box.tall canvas{max-height:280px !important}
 .chart-box.short canvas{max-height:160px !important}
 
@@ -202,7 +203,6 @@ button{font-family:'Lato',sans-serif;cursor:pointer}
 /* ── GEO ── */
 .geo-grid{display:grid;gap:12px}
 /* #chart-countries sizing handled by Chart.js */
-#chart-l2-top25{min-height:420px}
 #chart-region-time{max-height:220px !important}
 .region-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .region-card{background:var(--white);border:1px solid var(--rule);border-radius:var(--r);padding:10px}

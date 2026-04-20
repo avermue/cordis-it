@@ -5,16 +5,20 @@
 function buildSidebar() {
   buildList('f-programme', 'programme', [...new Set(IT_PROJECTS.map(p => p.programme))].sort(), p => p.programme);
 
-  const itRoles = [...new Set(IT_PROJECTS.map(p => p.itRole).filter(Boolean))].sort();
-  buildList('f-it-role', 'itRole', itRoles, p => p.itRole, roleL);
-
-  // Scheme groups
+  // Scheme groups — sorted by project count desc, "Other" only shown if non-empty
   const sgCounts = {};
   IT_PROJECTS.forEach(p => { sgCounts[p.schemeGroup] = (sgCounts[p.schemeGroup] || 0) + 1; });
+  const sgSorted = Object.keys(SCHEME_GROUPS).filter(g => sgCounts[g]).sort((a, b) => sgCounts[b] - sgCounts[a]);
   const sgEl = document.getElementById('f-scheme-group');
-  sgEl.innerHTML = Object.keys(SCHEME_GROUPS).filter(g => sgCounts[g]).map(g => `
+  sgEl.innerHTML = sgSorted.map(g => `
     <label class="ci"><input type="checkbox" data-key="schemeGroup" value="${g}">
     ${g}<span class="cc">${sgCounts[g] || 0}</span></label>`).join('');
+
+  // IT roles — sorted by project count desc
+  const roleCounts = {};
+  IT_PROJECTS.forEach(p => { if (p.itRole) roleCounts[p.itRole] = (roleCounts[p.itRole] || 0) + 1; });
+  const rolesSorted = Object.keys(roleCounts).sort((a, b) => roleCounts[b] - roleCounts[a]);
+  buildList('f-it-role', 'itRole', rolesSorted, p => p.itRole, roleL);
 
   buildList('f-status', 'status', [...new Set(IT_PROJECTS.map(p => p.status).filter(Boolean))].sort(), p => p.status);
 

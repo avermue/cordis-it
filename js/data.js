@@ -8,7 +8,8 @@ const PER_PAGE = 25;
 
 /* ── Scheme Groups ── */
 const SCHEME_GROUPS = {
-  'RIA / IA':    s => s.includes('RIA') || s.includes('-IA'),
+  'RIA':         s => /\bRIA\b/.test(s),
+  'IA':          s => /(?<![R])(?:^|-)\s*IA\b/.test(s),
   'MSCA':        s => s.includes('MSCA'),
   'ERC':         s => s.includes('ERC'),
   'CSA':         s => s.includes('CSA'),

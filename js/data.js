@@ -136,6 +136,8 @@ function projectCats(p, level) {
 
 /* ── Chart palette ── */
 const PAL = ['rgba(37,99,171,.8)', 'rgba(109,40,217,.7)', 'rgba(146,96,10,.7)', 'rgba(22,101,52,.7)', 'rgba(153,27,27,.7)', 'rgba(74,144,217,.6)', 'rgba(156,163,175,.6)'];
-const DOM_PAL = ['#1a4f8a', '#166534', '#92600a', '#6d28d9', '#dc2626', '#0891b2', '#be185d', '#0f766e', '#78350f', '#374151'];
-const DONUT_PAL = ['#1a4f8a', '#2563ab', '#3b82f6', '#60a5fa', '#92600a', '#6d28d9', '#166534', '#dc2626', '#0891b2', '#be185d', '#78350f', '#0f766e'];
+const DOM_PAL = ['#1a4f8a', '#166534', '#92600a', '#b91c1c', '#7c3aed', '#0891b2', '#be185d', '#0f766e', '#78350f', '#374151'];
+/* DONUT_PAL: 6 first entries are distinct hues for EuroSciVoc L1 domains
+   (blue/green/brown/red/purple/teal), then complementary fillers */
+const DONUT_PAL = ['#1a4f8a', '#166534', '#92600a', '#b91c1c', '#7c3aed', '#0891b2', '#be185d', '#0f766e', '#78350f', '#374151', '#2563ab', '#60a5fa'];
 const L1_COLORS_DOM = {};

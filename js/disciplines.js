@@ -93,11 +93,26 @@ function renderDisciplines() {
     window._domDescendants = domDescendants;
   }
 
-  // Doughnut chart — built from tree (EuroSciVoc L1 only, no fallback categories)
+  // Build filtered project set for scoped counts
+  const filteredPkeys = new Set(FILTERED.map(p => p.id + '|' + p.programme));
+  window._filteredPkeys = filteredPkeys;
+
+  // Helper: count projects in a node (intersecting with FILTERED)
+  function nodeFilteredCount(node) {
+    const key = node.path.join('|||');
+    const ids = window._domDescendants && window._domDescendants[key];
+    if (!ids) return 0;
+    let n = 0;
+    ids.forEach(id => { if (filteredPkeys.has(id)) n++; });
+    return n;
+  }
+  window._nodeFilteredCount = nodeFilteredCount;
+
+  // Doughnut chart — built from tree, counts intersected with FILTERED
   const tree = getDomTree();
   const domE = tree.children
-    .filter(n => n.projects > 0)
-    .map(n => [n.name, n.projects])
+    .map(n => [n.name, nodeFilteredCount(n), n])
+    .filter(e => e[1] > 0)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 12);
   destroyChart('chart-domains');
@@ -105,10 +120,12 @@ function renderDisciplines() {
     domE.forEach(([d], i) => { L1_COLORS_DOM[d] = DONUT_PAL[i % DONUT_PAL.length]; });
     if (_donutDrillNode) {
       const freshNode = tree.children.find(n => n.name === _donutDrillNode.name) || _donutDrillNode;
-      const freshEntries = freshNode.children.map(c => [c.name, c.projects]);
-      renderDonutChart(freshEntries.length ? freshEntries : domE, freshEntries.length ? freshNode : null);
+      const freshEntries = freshNode.children
+        .map(c => [c.name, nodeFilteredCount(c)])
+        .filter(e => e[1] > 0);
+      renderDonutChart(freshEntries.length ? freshEntries : domE.map(e => [e[0], e[1]]), freshEntries.length ? freshNode : null);
     } else {
-      renderDonutChart(domE, null);
+      renderDonutChart(domE.map(e => [e[0], e[1]]), null);
     }
   }
 
@@ -144,7 +161,7 @@ function renderDonutChart(entries, drillNode) {
     type: 'doughnut',
     data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
     options: {
-      responsive: true, maintainAspectRatio: true,
+      responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: {
           position: 'right',
@@ -354,14 +371,16 @@ function removeDomFilter(key) {
 /* ── Top 25 L2 bar chart colored by L1 ── */
 function renderL2Top25() {
   const tree = getDomTree();
+  const nodeCount = window._nodeFilteredCount || (n => n.projects);
 
   // Collect all L2 nodes across all L1 nodes, with their L1 parent
   const l2Entries = [];
   tree.children.forEach(l1Node => {
     const l1Color = L1_COLORS_DOM[l1Node.name] || DOM_PAL[0];
     l1Node.children.forEach(l2Node => {
-      if (l2Node.projects > 0) {
-        l2Entries.push({ name: l2Node.name, count: l2Node.projects, l1: l1Node.name, color: l1Color });
+      const count = nodeCount(l2Node);
+      if (count > 0) {
+        l2Entries.push({ name: l2Node.name, count, l1: l1Node.name, color: l1Color });
       }
     });
   });

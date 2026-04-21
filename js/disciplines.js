@@ -147,9 +147,13 @@ function renderDonutChart(entries, drillNode) {
 
   const labels = entries.map(e => e[0]);
   const data = entries.map(e => e[1]);
-  const colors = drillNode
+  const baseColors = drillNode
     ? entries.map((_, i) => d3brighten(L1_COLORS_DOM[drillNode.path[0]] || DONUT_PAL[0], i * 0.3))
     : entries.map((_, i) => DONUT_PAL[i % DONUT_PAL.length]);
+
+  // Fill with transparency (aa ≈ 67%), border with full color
+  const fillColors = baseColors.map(c => c.startsWith('#') ? c + 'aa' : c);
+  const borderColors = baseColors;
 
   function d3brighten(hex, amt) {
     const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
@@ -159,7 +163,7 @@ function renderDonutChart(entries, drillNode) {
 
   CHARTS['chart-domains'] = new Chart(document.getElementById('chart-domains'), {
     type: 'doughnut',
-    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+    data: { labels, datasets: [{ data, backgroundColor: fillColors, borderColor: borderColors, borderWidth: 2 }] },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {

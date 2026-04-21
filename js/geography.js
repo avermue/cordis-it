@@ -139,25 +139,26 @@ function renderGeo() {
   }).join('');
 
   // ── Stacked area chart (absolute, not 100%) — global data ──
+  // Colors derived from DONUT_PAL with aa transparency (≈67%) for fill, full color for border
   const REG_COLORS_T = {
-    'Western Europe':            'rgba(120,170,225,.60)',
-    'Northern Europe':           'rgba(110,205,225,.55)',
-    'Southern Europe':           'rgba(235,180,115,.55)',
-    'Central & Eastern Europe':  'rgba(180,155,220,.55)',
-    'Americas & Oceania':        'rgba(130,210,180,.55)',
-    'Asia':                      'rgba(225,155,155,.55)',
-    'Africa':                    'rgba(200,190,140,.55)',
-    'Rest of the World':         'rgba(190,190,200,.45)',
+    'Western Europe':            '#1a4f8aaa',
+    'Northern Europe':           '#0891b2aa',
+    'Southern Europe':           '#92600aaa',
+    'Central & Eastern Europe':  '#7c3aedaa',
+    'Americas & Oceania':        '#166534aa',
+    'Asia':                      '#b91c1caa',
+    'Africa':                    '#be185daa',
+    'Rest of the World':         '#374151aa',
   };
   const REG_BORDERS = {
-    'Western Europe':            'rgba(60,110,180,.85)',
-    'Northern Europe':           'rgba(40,155,180,.85)',
-    'Southern Europe':           'rgba(195,120,40,.85)',
-    'Central & Eastern Europe':  'rgba(120,85,175,.85)',
-    'Americas & Oceania':        'rgba(55,160,120,.85)',
-    'Asia':                      'rgba(185,80,80,.85)',
-    'Africa':                    'rgba(145,130,70,.85)',
-    'Rest of the World':         'rgba(130,130,140,.70)',
+    'Western Europe':            '#1a4f8a',
+    'Northern Europe':           '#0891b2',
+    'Southern Europe':           '#92600a',
+    'Central & Eastern Europe':  '#7c3aed',
+    'Americas & Oceania':        '#166534',
+    'Asia':                      '#b91c1c',
+    'Africa':                    '#be185d',
+    'Rest of the World':         '#374151',
   };
 
   const byYearReg = {};

@@ -141,14 +141,14 @@ function renderGeo() {
   // ── Stacked area chart (absolute, not 100%) — global data ──
   // Colors derived from DONUT_PAL with aa transparency (≈67%) for fill, full color for border
   const REG_COLORS_T = {
-    'Western Europe':            '#1a4f8aaa',
-    'Northern Europe':           '#0891b2aa',
-    'Southern Europe':           '#92600aaa',
-    'Central & Eastern Europe':  '#7c3aedaa',
-    'Americas & Oceania':        '#166534aa',
-    'Asia':                      '#b91c1caa',
-    'Africa':                    '#be185daa',
-    'Rest of the World':         '#374151aa',
+    'Western Europe':            '#3b82f666',
+    'Northern Europe':           '#22d3ee66',
+    'Southern Europe':           '#f59e0b66',
+    'Central & Eastern Europe':  '#a78bfa66',
+    'Americas & Oceania':        '#34d39966',
+    'Asia':                      '#f8717166',
+    'Africa':                    '#f472b666',
+    'Rest of the World':         '#94a3b866',
   };
   const REG_BORDERS = {
     'Western Europe':            '#1a4f8a',

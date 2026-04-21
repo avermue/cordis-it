@@ -6,9 +6,8 @@ function renderTimeline() {
   const gf = document.getElementById('gantt-filter').value;
   const gs = document.getElementById('gantt-sort').value;
   let proj = FILTERED.filter(p => (gf === 'ALL' || p.status === 'SIGNED') && p.startDate && p.endDate);
-  if (gs === 'end-asc') proj.sort((a, b) => a.endDate.localeCompare(b.endDate));
-  else if (gs === 'start-asc') proj.sort((a, b) => a.startDate.localeCompare(b.startDate));
-  else proj.sort((a, b) => (a.acronym || '').localeCompare(b.acronym || ''));
+  if (gs === 'end-desc') proj.sort((a, b) => b.endDate.localeCompare(a.endDate));
+  else proj.sort((a, b) => a.endDate.localeCompare(b.endDate));
 
   if (!proj.length) {
     document.getElementById('gantt-wrap').innerHTML = '<div class="empty"><span class="big">∅</span>No projects to display.</div>';
@@ -27,7 +26,6 @@ function renderTimeline() {
   let t = new Date(minD.getFullYear(), 0, 1);
   while (t <= maxD) { if (t >= minD) ticks.push(new Date(t)); t = new Date(t.getFullYear() + 1, 0, 1); }
 
-  const today = new Date();
   const todayPct = Math.max(0, Math.min(100, (today - minD) / totalMs * 100));
   const pct = d => Math.max(0, (new Date(d) - minD) / totalMs * 100);
   const w = (s, e) => Math.max(0.5, (new Date(e) - new Date(s)) / totalMs * 100);
@@ -37,15 +35,24 @@ function renderTimeline() {
     <div class="g-months">${ticks.map(d => `<div class="g-tick">${d.getFullYear()}</div>`).join('')}</div>
   </div>`;
 
-  const rows = proj.map(p => `<div class="g-row">
+  const STATUS_COLOR = {
+    'SIGNED':     'var(--it)',
+    'CLOSED':     '#92600a',
+    'TERMINATED': 'var(--red)',
+  };
+
+  const rows = proj.map(p => {
+    const barColor = STATUS_COLOR[p.status] || 'var(--ink-light)';
+    return `<div class="g-row">
       <div class="g-name" onclick="openModal('${p.id}','${p.programme}')" title="${p.title}">${p.acronym || '–'}</div>
       <div style="flex:1;position:relative;height:13px">
-        <div class="g-bar" style="left:${pct(p.startDate)}%;width:${w(p.startDate, p.endDate)}%;background:var(--it);opacity:.85"
+        <div class="g-bar" style="left:${pct(p.startDate)}%;width:${w(p.startDate, p.endDate)}%;background:${barColor};opacity:.85"
              onclick="openModal('${p.id}','${p.programme}')"
-             title="${p.acronym} | ${fmtD(p.startDate)} → ${fmtD(p.endDate)} | IT: ${roleL(p.itRole)}"></div>
+             title="${p.acronym} | ${fmtD(p.startDate)} → ${fmtD(p.endDate)} | ${p.status} | IT: ${roleL(p.itRole)}"></div>
         <div style="position:absolute;top:0;bottom:0;width:1.5px;background:var(--red);opacity:.4;left:${todayPct}%;pointer-events:none"></div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   document.getElementById('gantt-wrap').innerHTML = head + rows;
 

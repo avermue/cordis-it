@@ -229,9 +229,8 @@
     <div class="tab-panel" id="tab-timeline">
       <div class="gantt-controls">
         <select id="gantt-sort">
-          <option value="end-asc">Sort by end date ↑</option>
-          <option value="start-asc">Sort by start date ↑</option>
-          <option value="alpha">Alphabetical</option>
+          <option value="end-asc">End date ↑</option>
+          <option value="end-desc">End date ↓</option>
         </select>
         <select id="gantt-filter">
           <option value="SIGNED">Ongoing only</option>
@@ -239,6 +238,12 @@
         </select>
         <span style="font-family:'Fira Code',monospace;font-size:.65rem;color:var(--ink-light)">
           Red line = today &nbsp;|&nbsp; Click a bar to open project
+          &nbsp;|&nbsp;
+          <span style="display:inline-flex;align-items:center;gap:4px">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--it)"></span>Ongoing
+            <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#92600a;margin-left:4px"></span>Closed
+            <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--red);margin-left:4px"></span>Terminated
+          </span>
         </span>
       </div>
       <div class="gantt-wrap" id="gantt-wrap">

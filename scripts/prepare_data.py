@@ -15,6 +15,7 @@ Option:
 """
 
 import argparse, io, json, os, sys, zipfile
+from datetime import date as dt_date
 from urllib.request import urlopen, Request
 from urllib.error import URLError
 
@@ -26,6 +27,7 @@ BASE_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 DATA_DIR  = os.path.join(BASE_DIR, "data")
 CACHE_DIR = os.path.join(DATA_DIR, "cache")
 OUTPUT    = os.path.join(DATA_DIR, "inrae_projects.json")
+OVERRIDES = os.path.join(DATA_DIR, "status_overrides.json")
 
 SOURCES = [
     {
@@ -357,6 +359,78 @@ def process(zip_bytes, prog):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# STATUS OVERRIDE — verify SIGNED projects past their endDate against CORDIS
+# ─────────────────────────────────────────────────────────────────────────────
+
+def check_cordis_status(project_id):
+    """Fetch CORDIS project page and return detected status or None."""
+    url = f"https://cordis.europa.eu/project/id/{project_id}"
+    try:
+        req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        html = urlopen(req, timeout=30).read().decode("utf-8", errors="ignore")
+        if "Project closed" in html or "project closed" in html:
+            return "CLOSED"
+        if "Project terminated" in html or "project terminated" in html:
+            return "TERMINATED"
+        if "Project open" in html or "project open" in html:
+            return "SIGNED"
+        return None  # Could not determine
+    except Exception as e:
+        log(f"    ⚠ Could not fetch CORDIS page for {project_id}: {e}")
+        return None
+
+def load_overrides():
+    """Load status_overrides.json, return dict {id: status}."""
+    if os.path.exists(OVERRIDES):
+        with open(OVERRIDES, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+def save_overrides(overrides):
+    """Save status_overrides.json."""
+    with open(OVERRIDES, "w", encoding="utf-8") as f:
+        json.dump(overrides, f, ensure_ascii=False, indent=2)
+
+def apply_overrides(all_projects, overrides):
+    """Apply stored overrides to project list."""
+    for p in all_projects:
+        if p["id"] in overrides:
+            p["status"] = overrides[p["id"]]
+
+def check_and_update_overrides(all_projects, overrides):
+    """
+    For each IT project with status=SIGNED and endDate in the past,
+    verify current status on CORDIS. Update overrides if different.
+    Returns True if any override was added or changed.
+    """
+    today = str(dt_date.today())
+    suspects = [
+        p for p in all_projects
+        if p.get("hasIT") and p.get("status") == "SIGNED"
+        and p.get("endDate", "") < today
+    ]
+    if not suspects:
+        return False
+
+    log(f"\n── Checking {len(suspects)} IT project(s) past endDate still SIGNED ──")
+    changed = False
+    for p in suspects:
+        pid = p["id"]
+        log(f"  {p.get('acronym', pid):20} endDate={p['endDate']} → checking CORDIS...")
+        live_status = check_cordis_status(pid)
+        if live_status and live_status != "SIGNED":
+            log(f"    ✓ Status updated: SIGNED → {live_status}")
+            overrides[pid] = live_status
+            p["status"] = live_status
+            changed = True
+        elif live_status == "SIGNED":
+            log(f"    · Still SIGNED on CORDIS — no change")
+        else:
+            log(f"    · Status undetermined — skipping")
+    return changed
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -396,6 +470,20 @@ def main():
         sys.exit(0)
 
     all_projects.sort(key=lambda p: p.get("startDate", ""), reverse=True)
+
+    # ── Status overrides ──────────────────────────────────────────────────────
+    overrides = load_overrides()
+
+    # Apply existing overrides first (in case ZIP still has stale status)
+    if overrides:
+        apply_overrides(all_projects, overrides)
+        log(f"\n  Applied {len(overrides)} existing status override(s).")
+
+    # Check CORDIS live for IT projects past endDate still SIGNED
+    overrides_changed = check_and_update_overrides(all_projects, overrides)
+    if overrides_changed:
+        save_overrides(overrides)
+        log(f"  status_overrides.json updated ({len(overrides)} override(s) total).")
 
     # ── Summary ───────────────────────────────────────────────────────────────
     log(f"\n{'='*52}")

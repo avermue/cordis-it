@@ -26,6 +26,7 @@ function renderTimeline() {
   let t = new Date(minD.getFullYear(), 0, 1);
   while (t <= maxD) { if (t >= minD) ticks.push(new Date(t)); t = new Date(t.getFullYear() + 1, 0, 1); }
 
+  const today = new Date();
   const todayPct = Math.max(0, Math.min(100, (today - minD) / totalMs * 100));
   const pct = d => Math.max(0, (new Date(d) - minD) / totalMs * 100);
   const w = (s, e) => Math.max(0.5, (new Date(e) - new Date(s)) / totalMs * 100);

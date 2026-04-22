@@ -9,8 +9,7 @@ function renderCards() {
     return;
   }
   grid.innerHTML = FILTERED.map(p => {
-    const flags = p.partnerCountries.slice(0, 10).map(flag).join('') +
-      (p.partnerCountries.length > 10 ? ` +${p.partnerCountries.length - 10}` : '');
+    const flags = p.partnerCountries.map(flag).join('');
     const kw = p.keywords ? `<div class="card-kw">🏷 ${p.keywords}</div>` : '';
     const scheme = p.schemeGroup ? `<span class="tag tg-scheme">${p.schemeGroup}</span>` : '';
     const itTag = `<span class="tag tg-${p.itRole}" style="border-style:dashed">IT · ${roleL(p.itRole)}</span>`;

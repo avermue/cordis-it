@@ -37,9 +37,8 @@ function renderTimeline() {
   </div>`;
 
   const STATUS_COLOR = {
-    'SIGNED':     'var(--it)',
-    'CLOSED':     '#92600a',
-    'TERMINATED': 'var(--red)',
+    'SIGNED': 'var(--it)',
+    'CLOSED': '#92600a',
   };
 
   const rows = proj.map(p => {

@@ -71,35 +71,50 @@ function renderBudget() {
     options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } } } }
   });
 
-  // Time evolution
+  // Annual budget — exact prorata distribution across project duration
   const byY = {};
-  FILTERED.filter(p => p.itEcContribution > 0).forEach(p => {
-    const y = fmtY(p.startDate); if (!y) return;
-    if (!byY[y]) byY[y] = { total: 0, count: 0 };
-    byY[y].total += p.itEcContribution; byY[y].count++;
-  });
-  FILTERED.forEach(p => {
-    const y = fmtY(p.startDate); if (!y) return;
-    if (!byY[y]) byY[y] = { total: 0, count: 0 };
-    if (!p.itEcContribution || p.itEcContribution === 0) byY[y].count++;
+  FILTERED.filter(p => p.itEcContribution > 0 && p.startDate && p.endDate).forEach(p => {
+    const start = new Date(p.startDate);
+    const end = new Date(p.endDate);
+    const totalDays = (end - start) / 86400000 + 1;
+    if (totalDays <= 0) return;
+    const dailyBudget = p.itEcContribution / totalDays;
+
+    // Walk through each calendar year covered by [start, end]
+    for (let y = start.getFullYear(); y <= end.getFullYear(); y++) {
+      const yearStart = new Date(y, 0, 1);
+      const yearEnd   = new Date(y, 11, 31);
+      const overlapStart = start > yearStart ? start : yearStart;
+      const overlapEnd   = end   < yearEnd   ? end   : yearEnd;
+      const daysInYear = (overlapEnd - overlapStart) / 86400000 + 1;
+      if (daysInYear > 0) {
+        if (!byY[y]) byY[y] = 0;
+        byY[y] += dailyBudget * daysInYear;
+      }
+    }
   });
   const years = Object.keys(byY).sort();
   destroyChart('chart-time');
   CHARTS['chart-time'] = new Chart(document.getElementById('chart-time'), {
     type: 'bar',
     data: {
-      labels: years, datasets: [
-        { label: 'IT EU contribution (M€)', data: years.map(y => +(byY[y].total / 1e6).toFixed(2)), backgroundColor: 'rgba(37,99,171,.7)', yAxisID: 'y', order: 2 },
-        { label: 'Number of IT projects', data: years.map(y => byY[y].count), type: 'line', borderColor: 'rgba(146,96,10,1)', backgroundColor: 'rgba(146,96,10,.1)', yAxisID: 'y1', tension: .3, order: 1, pointRadius: 4 }
-      ]
+      labels: years,
+      datasets: [{
+        label: 'IT annual budget (M€)',
+        data: years.map(y => +(byY[y] / 1e6).toFixed(2)),
+        backgroundColor: 'rgba(37,99,171,.7)',
+        borderRadius: 3,
+      }]
     },
     options: {
       responsive: true, maintainAspectRatio: true,
-      scales: {
-        y: { beginAtZero: true, title: { display: true, text: 'M€' }, grid: { color: 'rgba(0,0,0,.04)' } },
-        y1: { beginAtZero: true, position: 'right', title: { display: true, text: 'Projects' }, grid: { drawOnChartArea: false } }
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => `${c.raw} M€` } }
       },
-      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 14 } } }
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'M€' }, grid: { color: 'rgba(0,0,0,.04)' } }
+      }
     }
   });
 }

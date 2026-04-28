@@ -32,8 +32,8 @@ async function load() {
       p.programme = normProg(p);
       p.itRole = normRole(p.itRole || '');
       (p.partners || []).forEach(o => { o.role = normRole(o.role || ''); });
-      p.schemeGroup = schemeGroup(p.fundingScheme || '');
       if (!p.fundingSchemeShort) p.fundingSchemeShort = (p.fundingScheme || '').replace('HORIZON-TMA-', '').replace('HORIZON-', '');
+      p.schemeGroup = schemeGroup(p.fundingSchemeShort || p.fundingScheme || '');
     });
     IT_PROJECTS = ALL.filter(p => p.hasIT);
     init();

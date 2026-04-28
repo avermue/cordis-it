@@ -10,13 +10,38 @@ function renderBudget() {
   const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
   const max = sorted.length ? sorted[sorted.length - 1] : 0;
 
+  // Average annual IT budget since 2014 (start of Horizon Europe era) to current year
+  // Uses prorata distribution identical to the annual chart below
+  const HE_START = 2014;
+  const currentYear = new Date().getFullYear();
+  const byYstat = {};
+  FILTERED.filter(p => p.itEcContribution > 0 && p.startDate && p.endDate).forEach(p => {
+    const start = new Date(p.startDate);
+    const end   = new Date(p.endDate);
+    const totalDays = (end - start) / 86400000 + 1;
+    if (totalDays <= 0) return;
+    const dailyBudget = p.itEcContribution / totalDays;
+    for (let y = Math.max(start.getFullYear(), HE_START); y <= Math.min(end.getFullYear(), currentYear); y++) {
+      const yearStart   = new Date(y, 0, 1);
+      const yearEnd     = new Date(y, 11, 31);
+      const overlapStart = start > yearStart ? start : yearStart;
+      const overlapEnd   = end   < yearEnd   ? end   : yearEnd;
+      const daysInYear  = (overlapEnd - overlapStart) / 86400000 + 1;
+      if (daysInYear > 0) byYstat[y] = (byYstat[y] || 0) + dailyBudget * daysInYear;
+    }
+  });
+  const statYears = Object.keys(byYstat);
+  const avgAnnual = statYears.length
+    ? Object.values(byYstat).reduce((s, v) => s + v, 0) / statYears.length
+    : 0;
+
   document.getElementById('budget-stats').innerHTML = `
     <div class="stat-card"><div class="stat-val">${FILTERED.length}</div><div class="stat-lbl">Projects</div><div class="stat-sub">${itEC.length} with known IT budget</div></div>
     <div class="stat-card"><div class="stat-val">${fmtM(total)}</div><div class="stat-lbl">Total IT EU Contribution</div></div>
     <div class="stat-card"><div class="stat-val">${fmtM(avg)}</div><div class="stat-lbl">Average per project</div></div>
     <div class="stat-card"><div class="stat-val">${fmtM(median)}</div><div class="stat-lbl">Median</div></div>
     <div class="stat-card"><div class="stat-val">${fmtM(max)}</div><div class="stat-lbl">Largest</div></div>
-    <div class="stat-card"><div class="stat-val">${FILTERED.filter(p => p.itRole === 'associatedPartner').length}</div><div class="stat-lbl">As Assoc. Partner</div></div>`;
+    <div class="stat-card"><div class="stat-val">${fmtM(avgAnnual)}</div><div class="stat-lbl">Avg annual budget</div><div class="stat-sub">${HE_START}–${currentYear} (prorata)</div></div>`;
 
   // Histogram — only projects with known IT budget (excludes 0€ via INRAE)
   const bins   = [0, 100, 200, 300, 400, 500, Infinity];

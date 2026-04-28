@@ -2,7 +2,7 @@
 """
 prepare_data.py
 ===============
-Downloads CORDIS data (Horizon Europe + H2020), filters projects
+Downloads CORDIS data (Horizon Europe + H2020 + FP7), filters projects
 involving INRAE and/or IT (INRAE Transfert), and generates
 data/inrae_projects.json for the webapp.
 
@@ -39,6 +39,11 @@ SOURCES = [
         "prog":  "H2020",
         "url":   "https://cordis.europa.eu/data/cordis-h2020projects-json.zip",
         "cache": os.path.join(CACHE_DIR, "h2020.zip"),
+    },
+    {
+        "prog":  "FP7",
+        "url":   "https://cordis.europa.eu/data/cordis-fp7projects-json.zip",
+        "cache": os.path.join(CACHE_DIR, "fp7.zip"),
     },
 ]
 
@@ -314,8 +319,22 @@ def process(zip_bytes, prog):
 
         # Normalise funding scheme for display
         scheme = ss(get(row, "fundingScheme", "funding_scheme"))
-        # Strip "HORIZON-" prefix for cleaner display
+        # Strip "HORIZON-" prefix for cleaner display (H2020/HE)
         scheme_short = scheme.replace("HORIZON-TMA-","").replace("HORIZON-","")
+        # Map FP7 funding schemes to H2020-equivalent categories
+        # CP-* (Collaborative Projects) → RIA ; CP-CSA-Infra → INFRA ; CSA-* → CSA
+        _fp7_map = {
+            "CP-TP":        "RIA",
+            "CP-IP":        "RIA",
+            "CP-FP":        "RIA",
+            "CP":           "RIA",
+            "CP-IP-SICA":   "RIA",
+            "CP-CSA-Infra": "INFRA",
+            "CSA-CA":       "CSA",
+            "CSA-SA":       "CSA",
+        }
+        if prog == "FP7" and scheme in _fp7_map:
+            scheme_short = _fp7_map[scheme]
 
         projects.append({
             "id":                  pid,
@@ -492,6 +511,7 @@ def main():
     log(f"Total              : {len(all_projects)}")
     log(f"  Horizon Europe   : {sum(1 for p in all_projects if p['programme']=='HORIZON')}")
     log(f"  H2020            : {sum(1 for p in all_projects if p['programme']=='H2020')}")
+    log(f"  FP7              : {sum(1 for p in all_projects if p['programme']=='FP7')}")
     log(f"  With INRAE       : {sum(1 for p in all_projects if p['hasINRAE'])}")
     log(f"  With IT          : {sum(1 for p in all_projects if p['hasIT'])}")
     log(f"  INRAE + IT       : {sum(1 for p in all_projects if p['hasINRAE'] and p['hasIT'])}")

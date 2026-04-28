@@ -14,6 +14,7 @@ const SCHEME_GROUPS = {
   'ERC':         s => s.includes('ERC'),
   'CSA':         s => s.includes('CSA'),
   'EIC':         s => s.includes('EIC'),
+  'INFRA':       s => s === 'INFRA',
   'JU / COFUND': s => s.includes('JU-') || s.includes('COFUND'),
   'Other':       () => true
 };
@@ -75,12 +76,16 @@ const normRole = r => (r === 'partner' ? 'associatedPartner' : r) || '';
 
 function progTag(p) {
   const s = (p.programme || '').toUpperCase();
-  return s.includes('H2020') ? '<span class="tag tg-h2020">H2020</span>' : '<span class="tag tg-he">HE</span>';
+  if (s === 'H2020')   return '<span class="tag tg-h2020">H2020</span>';
+  if (s === 'FP7')     return '<span class="tag tg-fp7">FP7</span>';
+  return '<span class="tag tg-he">HE</span>';
 }
 
 function normProg(p) {
   const s = (p.programme || p.frameworkProgramme || '').toUpperCase();
-  return s.includes('H2020') ? 'H2020' : 'HORIZON';
+  if (s.includes('H2020'))   return 'H2020';
+  if (s.includes('FP7'))     return 'FP7';
+  return 'HORIZON';
 }
 
 /* ── Regions ── */

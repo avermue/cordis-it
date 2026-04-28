@@ -90,6 +90,7 @@ button{font-family:'Lato',sans-serif;cursor:pointer}
 .tag{font-family:'Fira Code',monospace;font-size:.59rem;padding:2px 6px;border-radius:10px;border:1px solid;white-space:nowrap;line-height:1.7}
 .tg-he        {color:#1e5631;border-color:#a8d8b9;background:#e8f5ec}
 .tg-h2020     {color:var(--it);border-color:#93c5fd;background:var(--it-pale)}
+.tg-fp7       {color:#5b2d8e;border-color:#c4b5fd;background:#f5f3ff}
 .tg-SIGNED    {color:var(--green);border-color:#86efac;background:var(--green-pale)}
 .tg-CLOSED    {color:#78350f;border-color:#fcd34d;background:#fef9c3}
 .tg-TERMINATED{color:var(--red);border-color:#fca5a5;background:var(--red-pale)}

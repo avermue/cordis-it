@@ -89,7 +89,7 @@ function renderBudget() {
   // By scheme group
   const bySG = {};
   FILTERED.forEach(p => { const g = p.schemeGroup || 'Other'; if (!bySG[g]) bySG[g] = { count: 0, total: 0 }; bySG[g].count++; bySG[g].total += (p.itEcContribution || 0); });
-  const sgE = Object.entries(bySG).sort((a, b) => b[1].total - a[1].total);
+  const sgE = Object.entries(bySG).filter(e => e[1].total > 0).sort((a, b) => b[1].total - a[1].total);
   destroyChart('chart-scheme');
   CHARTS['chart-scheme'] = new Chart(document.getElementById('chart-scheme'), {
     type: 'doughnut',

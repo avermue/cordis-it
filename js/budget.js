@@ -89,12 +89,12 @@ function renderBudget() {
   // By scheme group
   const bySG = {};
   FILTERED.forEach(p => { const g = p.schemeGroup || 'Other'; if (!bySG[g]) bySG[g] = { count: 0, total: 0 }; bySG[g].count++; bySG[g].total += (p.itEcContribution || 0); });
-  const sgE = Object.entries(bySG).sort((a, b) => b[1].count - a[1].count);
+  const sgE = Object.entries(bySG).sort((a, b) => b[1].total - a[1].total);
   destroyChart('chart-scheme');
   CHARTS['chart-scheme'] = new Chart(document.getElementById('chart-scheme'), {
     type: 'doughnut',
-    data: { labels: sgE.map(e => `${e[0]} (${e[1].count})`), datasets: [{ data: sgE.map(e => e[1].count), backgroundColor: PAL }] },
-    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } } } }
+    data: { labels: sgE.map(e => `${e[0]} (${fmtM(e[1].total)})`), datasets: [{ data: sgE.map(e => +(e[1].total / 1e6).toFixed(2)), backgroundColor: PAL }] },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } }, tooltip: { callbacks: { label: c => `${c.label.split(' (')[0]}: ${c.raw} M€` } } } }
   });
 
   // Annual budget by programme — stacked bar with prorata distribution

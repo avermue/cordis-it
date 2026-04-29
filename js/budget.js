@@ -13,7 +13,7 @@ function renderBudget() {
   const max = maxP ? maxP.itEcContribution : 0;
 
   // Average annual IT budget since 2014 (start of Horizon Europe era) to current year
-  const HE_START = 2014;
+  const AVG_BUDGET_START = 2012;
   const currentYear = new Date().getFullYear();
   const byYstat = {};
   FILTERED.filter(p => p.itEcContribution > 0 && p.startDate && p.endDate).forEach(p => {
@@ -22,7 +22,7 @@ function renderBudget() {
     const totalDays = (end - start) / 86400000 + 1;
     if (totalDays <= 0) return;
     const dailyBudget = p.itEcContribution / totalDays;
-    for (let y = Math.max(start.getFullYear(), HE_START); y <= Math.min(end.getFullYear(), currentYear); y++) {
+    for (let y = Math.max(start.getFullYear(), AVG_BUDGET_START); y <= Math.min(end.getFullYear(), currentYear); y++) {
       const yearStart    = new Date(y, 0, 1);
       const yearEnd      = new Date(y, 11, 31);
       const overlapStart = start > yearStart ? start : yearStart;
@@ -42,7 +42,7 @@ function renderBudget() {
     <div class="stat-card"><div class="stat-val">${fmtM(avg)}</div><div class="stat-lbl">Average per project</div></div>
     <div class="stat-card"><div class="stat-val">${fmtM(min)}</div><div class="stat-lbl">Smallest</div>${minP ? `<div class="stat-sub">${minP.acronym || minP.title}</div>` : ''}</div>
     <div class="stat-card"><div class="stat-val">${fmtM(max)}</div><div class="stat-lbl">Largest</div>${maxP ? `<div class="stat-sub">${maxP.acronym || maxP.title}</div>` : ''}</div>
-    <div class="stat-card"><div class="stat-val">${fmtM(avgAnnual)}</div><div class="stat-lbl">Avg annual budget</div><div class="stat-sub">${HE_START}–${currentYear} (prorata)</div></div>`;
+    <div class="stat-card"><div class="stat-val">${fmtM(avgAnnual)}</div><div class="stat-lbl">Avg annual budget</div><div class="stat-sub">Since 2012 (post FP6)</div></div>`;
 
   // Histogram — only projects with known IT budget (excludes 0€ via INRAE)
   const bins   = [0, 100, 200, 300, 400, 500, Infinity];

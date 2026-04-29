@@ -146,3 +146,8 @@ const DOM_PAL = ['#1a4f8a', '#166534', '#92600a', '#b91c1c', '#7c3aed', '#0891b2
    (blue/green/brown/red/purple/teal), then complementary fillers */
 const DONUT_PAL = ['#1a4f8a', '#166534', '#92600a', '#b91c1c', '#7c3aed', '#0891b2', '#be185d', '#0f766e', '#78350f', '#374151', '#2563ab', '#60a5fa'];
 const L1_COLORS_DOM = {};
+const PROG_COLORS = {
+  'FP7':     'rgba(91,45,142,.8)',
+  'H2020':   'rgba(26,79,138,.8)',
+  'HORIZON': 'rgba(30,86,49,.8)',
+};

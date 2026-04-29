@@ -216,6 +216,9 @@ button{font-family:'Lato',sans-serif;cursor:pointer}
 .gantt-controls{display:flex;gap:7px;margin-bottom:9px;align-items:center;flex-wrap:wrap}
 .gantt-controls select{padding:5px 22px 5px 7px;border:1.5px solid var(--rule);border-radius:var(--r);font-size:.78rem;outline:none;background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E") no-repeat right 7px center;appearance:none}
 .gantt-wrap{overflow-x:auto;background:var(--white);border:1px solid var(--rule);border-radius:var(--r);padding:10px;max-height:70vh;overflow-y:auto}
+.gantt-legend{display:flex;gap:14px;align-items:center;padding:2px 2px 8px;font-size:.75rem;color:var(--ink-mid);flex-wrap:wrap}
+.gantt-legend .gl-closed{color:var(--ink-light)}
+.gl-dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
 .gantt-head{display:flex;margin-bottom:5px;border-bottom:1px solid var(--rule);padding-bottom:5px;position:sticky;top:0;background:var(--white);z-index:1}
 .g-label-col{width:180px;flex-shrink:0;font-family:'Fira Code',monospace;font-size:.57rem;color:var(--ink-light);text-transform:uppercase;letter-spacing:.06em}
 .g-months{flex:1;display:flex}

@@ -97,16 +97,15 @@ function renderBudget() {
     options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } } } }
   });
 
-  // Annual budget — exact prorata distribution across project duration
-  const byY = {};
+  // Annual budget by programme — stacked bar with prorata distribution
+  const byYProg = {};
   FILTERED.filter(p => p.itEcContribution > 0 && p.startDate && p.endDate).forEach(p => {
+    const prog = normProg(p);
     const start = new Date(p.startDate);
     const end = new Date(p.endDate);
     const totalDays = (end - start) / 86400000 + 1;
     if (totalDays <= 0) return;
     const dailyBudget = p.itEcContribution / totalDays;
-
-    // Walk through each calendar year covered by [start, end]
     for (let y = start.getFullYear(); y <= end.getFullYear(); y++) {
       const yearStart = new Date(y, 0, 1);
       const yearEnd   = new Date(y, 11, 31);
@@ -114,32 +113,37 @@ function renderBudget() {
       const overlapEnd   = end   < yearEnd   ? end   : yearEnd;
       const daysInYear = (overlapEnd - overlapStart) / 86400000 + 1;
       if (daysInYear > 0) {
-        if (!byY[y]) byY[y] = 0;
-        byY[y] += dailyBudget * daysInYear;
+        if (!byYProg[y]) byYProg[y] = {};
+        byYProg[y][prog] = (byYProg[y][prog] || 0) + dailyBudget * daysInYear;
       }
     }
   });
-  const years = Object.keys(byY).sort();
+  const years = Object.keys(byYProg).sort();
+  const PROG_ORDER = ['FP7', 'H2020', 'HORIZON'];
+  const PROG_LABELS = { 'FP7': 'FP7', 'H2020': 'H2020', 'HORIZON': 'Horizon Europe' };
   destroyChart('chart-time');
   CHARTS['chart-time'] = new Chart(document.getElementById('chart-time'), {
     type: 'bar',
     data: {
       labels: years,
-      datasets: [{
-        label: 'IT annual budget (M€)',
-        data: years.map(y => +(byY[y] / 1e6).toFixed(2)),
-        backgroundColor: 'rgba(37,99,171,.7)',
-        borderRadius: 3,
-      }]
+      datasets: PROG_ORDER
+        .filter(prog => years.some(y => byYProg[y]?.[prog] > 0))
+        .map(prog => ({
+          label: PROG_LABELS[prog],
+          data: years.map(y => +((byYProg[y]?.[prog] || 0) / 1e6).toFixed(2)),
+          backgroundColor: PROG_COLORS[prog],
+          borderRadius: 2,
+        }))
     },
     options: {
       responsive: true, maintainAspectRatio: true,
       plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: c => `${c.raw} M€` } }
+        legend: { display: true, position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.raw} M€` } }
       },
       scales: {
-        y: { beginAtZero: true, title: { display: true, text: 'M€' }, grid: { color: 'rgba(0,0,0,.04)' } }
+        x: { stacked: true },
+        y: { stacked: true, beginAtZero: true, title: { display: true, text: 'M€' }, grid: { color: 'rgba(0,0,0,.04)' } }
       }
     }
   });

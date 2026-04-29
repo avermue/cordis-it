@@ -31,22 +31,29 @@ function renderTimeline() {
   const pct = d => Math.max(0, (new Date(d) - minD) / totalMs * 100);
   const w = (s, e) => Math.max(0.5, (new Date(e) - new Date(s)) / totalMs * 100);
 
+  const GANTT_PROGS = [
+    { key: 'FP7',     label: 'FP7' },
+    { key: 'H2020',   label: 'H2020' },
+    { key: 'HORIZON', label: 'Horizon Europe' },
+  ];
+  const legend = `<div class="gantt-legend">${
+    GANTT_PROGS.map(({ key, label }) =>
+      `<span><span class="gl-dot" style="background:${PROG_COLORS[key]}"></span>${label}</span>`
+    ).join('')
+  }<span class="gl-closed"><span class="gl-dot" style="background:rgba(100,100,100,.3)"></span>Closed</span></div>`;
+
   const head = `<div class="gantt-head">
     <div class="g-label-col">Project</div>
     <div class="g-months">${ticks.map(d => `<div class="g-tick">${d.getFullYear()}</div>`).join('')}</div>
   </div>`;
 
-  const STATUS_COLOR = {
-    'SIGNED': 'var(--it)',
-    'CLOSED': '#92600a',
-  };
-
   const rows = proj.map(p => {
-    const barColor = STATUS_COLOR[p.status] || 'var(--ink-light)';
+    const base = PROG_COLORS[normProg(p)] || 'rgba(100,100,100,.8)';
+    const barColor = p.status === 'CLOSED' ? base.replace(/[\d.]+\)$/, '.3)') : base;
     return `<div class="g-row">
       <div class="g-name" onclick="openModal('${p.id}','${p.programme}')" title="${p.title}">${p.acronym || '–'}</div>
       <div style="flex:1;position:relative;height:13px">
-        <div class="g-bar" style="left:${pct(p.startDate)}%;width:${w(p.startDate, p.endDate)}%;background:${barColor};opacity:.85"
+        <div class="g-bar" style="left:${pct(p.startDate)}%;width:${w(p.startDate, p.endDate)}%;background:${barColor}"
              onclick="openModal('${p.id}','${p.programme}')"
              title="${p.acronym} | ${fmtD(p.startDate)} → ${fmtD(p.endDate)} | ${p.status} | IT: ${roleL(p.itRole)}"></div>
         <div style="position:absolute;top:0;bottom:0;width:1.5px;background:var(--red);opacity:.4;left:${todayPct}%;pointer-events:none"></div>
@@ -54,7 +61,7 @@ function renderTimeline() {
     </div>`;
   }).join('');
 
-  document.getElementById('gantt-wrap').innerHTML = head + rows;
+  document.getElementById('gantt-wrap').innerHTML = legend + head + rows;
 
   // Simultaneous active projects per year
   const allProj = FILTERED.filter(p => p.startDate && p.endDate);

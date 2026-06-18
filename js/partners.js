@@ -70,6 +70,7 @@ function renderPartners() {
     .filter(o => !hasCountryFilter || allowedCountries.has(o.country) || allowedCountries.has(CC_NORM[o.country] || o.country))
     .sort((a, b) => b.projects - a.projects);
 
+  window._partnerExportRows = rows;
   const total = rows.length;
   rows = rows.slice(PARTNER_PAGE * PER_PAGE, (PARTNER_PAGE + 1) * PER_PAGE);
   window._partnerRows = [];

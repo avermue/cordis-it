@@ -496,6 +496,9 @@ def main():
         else:
             any_updated = True
         projects = process(zip_bytes, source["prog"])
+        if not projects:
+            log(f"\n✗ {source['prog']}: no INRAE/IT projects found — refusing to overwrite the published dataset.")
+            sys.exit(1)
         for p in projects:
             key = p["id"]
             if key in seen_ids:

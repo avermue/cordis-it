@@ -120,15 +120,19 @@ def best_role(existing, new_role, new_ec):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def get_zip_dataset_date(zip_bytes):
-    """Extract the most recent contentUpdateDate from project.json inside the ZIP."""
+    """Extract the most recent contentUpdateDate from either CORDIS JSON ZIP format."""
     import io as _io
     try:
         with zipfile.ZipFile(_io.BytesIO(zip_bytes)) as zf:
-            names = [n for n in zf.namelist() if n.endswith('project.json')
-                     and 'organization' not in n.lower()]
-            if not names: return None
-            with zf.open(names[0]) as f:
-                projects = json.load(f)
+            legacy = [n for n in zf.namelist() if n.endswith('project.json')
+                      and 'organization' not in n.lower()]
+            if legacy:
+                with zf.open(legacy[0]) as f:
+                    projects = json.load(f)
+            else:
+                documents = [n for n in zf.namelist()
+                             if n.lower().startswith('project-rcn-') and n.lower().endswith('.json')]
+                projects = [json.load(zf.open(n)) for n in documents]
             dates = [p.get('contentUpdateDate','') for p in projects
                      if p.get('contentUpdateDate')]
             return max(dates) if dates else None
@@ -196,6 +200,114 @@ def find_file(names, *keywords, exclude=None):
     return None
 
 
+def relation_categories(item):
+    return ((item.get("relations") or {}).get("categories") or [])
+
+
+def category_by_classification(categories, classification):
+    return next((c for c in categories
+                 if (c.get("attributes") or {}).get("classification") == classification), {})
+
+
+def hierarchical_scheme_short(scheme, prog):
+    short = scheme.replace("HORIZON-TMA-", "").replace("HORIZON-", "")
+    if prog != "FP7":
+        return short
+    fp7_map = {
+        "CP-TP": "RIA", "CP-IP": "RIA", "CP-FP": "RIA", "CP": "RIA",
+        "CP-IP-SICA": "RIA", "CP-FP-SICA": "RIA", "CP-SICA": "RIA",
+        "CP-CSA-Infra": "INFRA", "CSA-CA": "CSA", "CSA-SA": "CSA", "NoE": "CSA",
+        "BSG-SME": "EIC", "BSG-SME-AG": "EIC", "MC-ITN": "MSCA",
+        "MC-IEF": "MSCA", "MC-IIF": "MSCA", "MC-IOF": "MSCA",
+        "MC-IRSES": "MSCA", "MC-CIG": "MSCA", "MC-ERG": "MSCA",
+        "MC-IRG": "MSCA", "MC-IAPP": "MSCA",
+    }
+    return fp7_map.get(scheme, fp7_map.get(scheme.removeprefix("FP7-"), short))
+
+
+def process_hierarchical(zf, project_files, prog):
+    """Process the DET format introduced on 2026-05-06: one JSON document per project."""
+    log(f"  New hierarchical format detected ({len(project_files):,} project documents).")
+    projects = []
+    ids_inrae, ids_it = set(), set()
+
+    for filename in project_files:
+        with zf.open(filename) as f:
+            row = json.load(f)
+
+        relations = row.get("relations") or {}
+        associations = relations.get("associations") or []
+        partners, inrae_p, it_p = [], None, None
+        for org in (a for a in associations if a.get("contenttype") == "organization"):
+            attrs, address = org.get("attributes") or {}, org.get("address") or {}
+            activity = ss(category_by_classification(
+                relation_categories(org), "organizationActivityType").get("code")).strip("/")
+            role = norm_role(ss(attrs.get("type")))
+            ec = sf(attrs.get("ecContribution", attrs.get("netEcContribution", 0)))
+            partner = {
+                "name": ss(org.get("legalName", org.get("name"))),
+                "shortName": ss(org.get("shortName")),
+                "country": ss(address.get("country")),
+                "activityType": activity, "role": role, "ecContribution": ec,
+                "city": ss(address.get("city")), "pic": ss(org.get("id")),
+            }
+            partners.append(partner)
+            entity = detect_entity(partner["name"], partner["shortName"])
+            if entity == "INRAE":
+                inrae_p = best_role(inrae_p, role, ec)
+            elif entity == "IT":
+                it_p = best_role(it_p, role, ec)
+
+        if not inrae_p and not it_p:
+            continue
+        pid = ss(row.get("id"))
+        if inrae_p: ids_inrae.add(pid)
+        if it_p: ids_it.add(pid)
+
+        categories = relations.get("categories") or []
+        scivoc = []
+        for category in categories:
+            if (category.get("attributes") or {}).get("classification") == "euroSciVoc":
+                entry = {
+                    "title": ss(category.get("title")),
+                    "path": ss(category.get("displayCode", category.get("code"))),
+                }
+                if entry["title"] and entry not in scivoc:
+                    scivoc.append(entry)
+        domains = sorted({s["path"].strip("/").split("/")[0] for s in scivoc if s["path"].strip("/")})
+        domains_l2 = sorted({s["path"].strip("/").split("/")[1] for s in scivoc
+                             if len(s["path"].strip("/").split("/")) >= 2})
+        topic = next((ss(a.get("id") or a.get("identifier")) for a in associations
+                      if (a.get("attributes") or {}).get("type") == "relatedTopic"), "")
+        if topic.startswith(prog + "_"):
+            topic = topic[len(prog) + 1:]
+        legal_basis = next((ss(a.get("id")) for a in associations
+                            if (a.get("attributes") or {}).get("type") == "relatedLegalBasis"), "")
+        scheme = ss(category_by_classification(categories, "projectFundingSchemeCategory").get("code")).strip("/")
+        countries = sorted({p["country"] for p in partners if p["country"] and p["country"] != "nan"})
+        projects.append({
+            "id": pid, "programme": prog, "acronym": ss(row.get("acronym")),
+            "title": ss(row.get("title")), "status": ss(row.get("status")),
+            "startDate": ss(row.get("startDate")), "endDate": ss(row.get("endDate")),
+            "totalCost": sf(row.get("totalCost")), "ecMaxContribution": sf(row.get("ecMaxContribution")),
+            "legalBasis": legal_basis, "topics": topic, "frameworkProgramme": prog,
+            "fundingScheme": scheme, "fundingSchemeShort": hierarchical_scheme_short(scheme, prog),
+            "objective": ss(row.get("objective")), "keywords": ss(row.get("keywords")),
+            "contentUpdateDate": ss(row.get("contentUpdateDate")),
+            "cordisUrl": f"https://cordis.europa.eu/project/id/{pid}",
+            "hasINRAE": bool(inrae_p), "inraeRole": inrae_p["role"] if inrae_p else "",
+            "inraeEcContribution": inrae_p["ec"] if inrae_p else 0.0,
+            "hasIT": bool(it_p), "itRole": it_p["role"] if it_p else "",
+            "itEcContribution": it_p["ec"] if it_p else 0.0,
+            "partnerCountries": countries, "partnerCount": len(partners), "partners": partners,
+            "euroSciVoc": scivoc, "domains": domains, "domains_l2": domains_l2,
+        })
+
+    log(f"  → INRAE: {len(ids_inrae)} | IT: {len(ids_it)} | Total: {len(projects)}")
+    log(f"  → {len(projects)} projects retained")
+    return projects
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PROCESS ONE PROGRAMME
 # ─────────────────────────────────────────────────────────────────────────────
@@ -206,7 +318,11 @@ def process(zip_bytes, prog):
 
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
         names = zf.namelist()
-        log(f"  ZIP contents: {names}")
+        log(f"  ZIP contents: {len(names):,} files")
+        hierarchical_files = [n for n in names
+                              if n.lower().startswith("project-rcn-") and n.lower().endswith(".json")]
+        if hierarchical_files:
+            return process_hierarchical(zf, hierarchical_files, prog)
 
         proj_file = find_file(names, "project", exclude=["organization","organisation","euroscivoc","topic","web","legal","policy","information"])
         org_file  = find_file(names, "organization") or find_file(names, "organisation")

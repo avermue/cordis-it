@@ -2,7 +2,7 @@
    data.js — Shared constants, helpers, region definitions
    ══════════════════════════════════════════════════════════════ */
 
-const DATA_URL = 'data/inrae_projects.json';
+const DATA_URL = 'data/inrae_projects.json?v=20260623-2';
 const GEO_PATHS_URL = 'data/geo-paths.json';
 const PER_PAGE = 25;
 
